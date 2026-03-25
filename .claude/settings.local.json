@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(python:*)",
+      "Bash(pip:*)",
+      "Read(*)",
+      "Write(1_0_strategy_research/**)",
+      "Write(0_0_work_protocols/**)",
+      "Write(0_1_shared_master_universe/**)",
+      "Edit(1_0_strategy_research/**)",
+      "Edit(0_0_work_protocols/**)",
+      "Edit(0_1_shared_master_universe/**)"
+    ],
+    "deny": [
+      "Write(CLAUDE.md)",
+      "Write(.gitignore)",
+      "Write(.claude/rules/**)",
+      "Write(2_0_agent_engineering/**)",
+      "Write(9_0_archive/**)",
+      "Edit(CLAUDE.md)",
+      "Edit(.gitignore)",
+      "Edit(.claude/rules/**)",
+      "Edit(2_0_agent_engineering/**)",
+      "Edit(9_0_archive/**)"
+    ]
+  }
+}

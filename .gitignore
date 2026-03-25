@@ -1,0 +1,110 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+MANIFEST
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env/
+.env.local
+.env.*.local
+virtualenv/
+.python-version
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── Data and cache ────────────────────────────────────────────────────────────
+# Research data cache (large binary/csv files should not be committed)
+1_0_strategy_research/research_data_cache/daily/
+1_0_strategy_research/research_data_cache/intraday_1m/
+1_0_strategy_research/research_data_cache/market/
+1_0_strategy_research/research_data_cache/coverage/
+
+# Runtime engineering outputs
+2_0_agent_engineering/engineering_runtime_outputs/
+
+# Generic data file types
+*.parquet
+*.feather
+*.hdf5
+*.h5
+*.pkl
+*.pickle
+*.npy
+*.npz
+*.arrow
+
+# Large CSV data dumps (small reference CSVs are allowed if committed intentionally)
+# Uncomment below to exclude all CSVs:
+# *.csv
+
+# ── Logs and temp ─────────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.temp
+logs/
+tmp/
+temp/
+
+# ── OS junk ───────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+*.sublime-project
+*.sublime-workspace
+
+# ── Testing and coverage ──────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# ── Type checking ─────────────────────────────────────────────────────────────
+.mypy_cache/
+.pytype/
+.pyre/
+
+# ── Secrets and credentials ───────────────────────────────────────────────────
+.env
+*.pem
+*.key
+*.p12
+secrets.json
+credentials.json
+broker_credentials.json
+api_keys.json
+.secrets/
+
+# ── Claude local settings (machine-specific, not shared) ─────────────────────
+# settings.local.json is intentionally committed as a starter config.
+# Add to this section if machine-specific overrides diverge.
