@@ -1,0 +1,8 @@
+id,label,n,mean,median,std,win_rate,p10,p90,t_stat,stop_rate,target_rate,expectancy
+V1,Any reclaim | No stop | Hold to close,873,0.4821,0.1786,3.8353,0.5304,-3.3677,4.2262,3.714,0.0,0.0,0.4821
+V2,Any reclaim | Structural stop (session_open) | Hold to close,873,0.0621,-0.0682,1.6279,0.0435,-0.383,0.0,1.128,0.9507,0.0,0.0621
+V3,Any reclaim | Hard stop -1.5% | Hold to close,873,0.1707,-0.9132,2.7314,0.3792,-1.5,3.1746,1.846,0.4868,0.0,0.1707
+V4,Early only (<=60 bars) | No stop | Hold to close,166,1.2192,0.9308,5.4831,0.6145,-4.4122,7.5337,2.865,0.0,0.0,1.2192
+V5,Early only (<=60 bars) | Structural stop | Hold to close,166,0.1439,-0.1397,2.1222,0.0542,-0.5556,0.0,0.873,0.9458,0.0,0.1439
+V6,Any reclaim | Structural stop | +2.0% target | Hold remainder,873,0.0117,-0.0596,0.5785,0.0779,-0.3604,0.0,0.599,0.9164,0.0653,0.0117
+V7,Any reclaim | Hard stop -1.5% | +2.0% target | Hold remainder,873,0.1169,-0.0799,1.5428,0.48,-1.5,2.0,2.238,0.4032,0.3368,0.1169

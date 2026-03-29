@@ -1,0 +1,13 @@
+template_id,entry_id,stop_id,r_target,n_events,n_triggered,trigger_rate_pct,n_gap_fill_triggered,gap_fill_rate_pct,n_cancelled,n_valid_triggered,n_win,n_loss_total,n_both_hit,n_time_exit,win_rate_pct,loss_rate_pct,time_exit_rate_pct,mean_pnl_r,median_pnl_r,expectancy_r,mean_mae_proxy_r,mean_mfe_proxy_r,pct_mfe_above_2r
+E_close_band__S_prior_low__T_1_5r,E_close_band,S_prior_low,1.5,6320,5573,88.18,2816,50.53,0,5573,1013,3750,2343,810,18.18,67.29,14.53,-0.366,-1.0,-0.366,-3.023,3.539,51.52
+E_close_band__S_prior_low__T_2_0r,E_close_band,S_prior_low,2.0,6320,5573,88.18,2816,50.53,0,5573,814,3750,2057,1009,14.61,67.29,18.11,-0.311,-1.0,-0.311,-3.023,3.539,51.52
+E_close_band__S_prior_low__T_3_0r,E_close_band,S_prior_low,3.0,6320,5573,88.18,2816,50.53,0,5573,568,3750,1588,1255,10.19,67.29,22.52,-0.228,-1.0,-0.228,-3.023,3.539,51.52
+E_close_band__S_prior_low_buffer__T_1_5r,E_close_band,S_prior_low_buffer,1.5,6320,5573,88.18,2816,50.53,0,5573,1172,3089,1378,1312,21.03,55.43,23.54,-0.182,-1.0,-0.182,-1.643,1.981,35.4
+E_close_band__S_prior_low_buffer__T_2_0r,E_close_band,S_prior_low_buffer,2.0,6320,5573,88.18,2816,50.53,0,5573,884,3089,1089,1600,15.86,55.43,28.71,-0.13,-1.0,-0.13,-1.643,1.981,35.4
+E_close_band__S_prior_low_buffer__T_3_0r,E_close_band,S_prior_low_buffer,3.0,6320,5573,88.18,2816,50.53,0,5573,479,3089,699,2005,8.6,55.43,35.98,-0.069,-1.0,-0.069,-1.643,1.981,35.4
+E_prior_high__S_prior_low__T_1_5r,E_prior_high,S_prior_low,1.5,6320,1481,23.43,120,8.1,0,1481,24,634,16,823,1.62,42.81,55.57,-0.37,-0.353,-0.37,-0.972,0.412,0.74
+E_prior_high__S_prior_low__T_2_0r,E_prior_high,S_prior_low,2.0,6320,1481,23.43,120,8.1,0,1481,7,634,4,840,0.47,42.81,56.72,-0.371,-0.353,-0.371,-0.972,0.412,0.74
+E_prior_high__S_prior_low__T_3_0r,E_prior_high,S_prior_low,3.0,6320,1481,23.43,120,8.1,0,1481,0,634,1,847,0.0,42.81,57.19,-0.372,-0.353,-0.372,-0.972,0.412,0.74
+E_prior_high__S_prior_low_buffer__T_1_5r,E_prior_high,S_prior_low_buffer,1.5,6320,1481,23.43,120,8.1,0,1481,19,453,8,1009,1.28,30.59,68.13,-0.251,-0.135,-0.251,-0.87,0.367,0.27
+E_prior_high__S_prior_low_buffer__T_2_0r,E_prior_high,S_prior_low_buffer,2.0,6320,1481,23.43,120,8.1,0,1481,3,453,1,1025,0.2,30.59,69.21,-0.252,-0.135,-0.252,-0.87,0.367,0.27
+E_prior_high__S_prior_low_buffer__T_3_0r,E_prior_high,S_prior_low_buffer,3.0,6320,1481,23.43,120,8.1,0,1481,0,453,1,1028,0.0,30.59,69.41,-0.253,-0.135,-0.253,-0.87,0.367,0.27

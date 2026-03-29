@@ -1,0 +1,5 @@
+category,n_events,n_unique_tickers,date_start,date_end,baseline_expectancy_r,year_2021,year_2022,year_2023,year_2024,year_2025,year_2026
+full_slice,9865.0,1830.0,2021-05-12,2026-03-23,0.3956,681,2250,647,1509,3726,1052
+intraday_covered_subset,5760.0,883.0,2021-05-12,2026-03-19,0.3788,580,1916,526,748,1790,200
+coverage_pct,58.4,48.3,,,,85.2,85.2,81.3,49.6,48.0,19.0
+intraday_subset_intraday_moc_baseline,5760.0,883.0,,,0.4279,,,,,,

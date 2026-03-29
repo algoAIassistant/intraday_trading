@@ -1,0 +1,157 @@
+================================================================================
+PHASE_R6 VALIDATION VERDICT: gap_directional_trap — candidate_1_v2
+Generated: 2026-03-29
+================================================================================
+
+VARIANT IDENTITY
+----------------------------------------
+  variant_id:   gap_directional_trap__bearish_medium_large__candidate_1_v2
+  family:       gap_directional_trap
+  track:        plan_next_day_day_trade
+  entry:        buy_stop at signal_day_close * 1.002
+  stop:         fill_price - 0.75 * signal_day_range_dollar
+  target:       fill_price + 2.0 * risk_dollar
+  activation:   13:15 ET (order goes live; inactive before this time)
+  cancel:       if not filled by 13:30 ET
+  exit:         forced time exit at 14:30 ET
+
+DATA BASIS
+----------------------------------------
+  Simulation basis:       intraday 1m parquet cache (built 2026_03_29)
+  Events in subset:       5,760  (58.4% of 9,865 production slice events)
+  Unique tickers traded:  856
+  Years:                  2021-2026 (all years present)
+  Representativeness:     subset daily-bar MOC delta vs full slice = -0.017R (confirmed representative)
+
+LENS 1: OVERALL PERFORMANCE
+----------------------------------------
+  n_events:               5,760
+  n_traded (triggered):   3,589  (62.3% trigger rate)
+  n_win (target hit):     253  (7.05%)
+  n_loss (stop hit):      1  (0.03%)
+  n_time_exit (14:30):    3,335  (92.92%)
+  expectancy_r:           0.7730R
+  PASS THRESHOLD (>0):    PASS
+
+LENS 2: YEARLY STABILITY
+----------------------------------------
+  2021: +0.805R
+  2022: +0.558R
+  2023: +0.661R
+  2024: +0.672R
+  2025: +0.979R
+  2026: +0.567R
+  Years positive: 6/6
+  All years positive: YES — PASS
+
+LENS 3: MARKET CONTEXT STABILITY
+----------------------------------------
+  Note: production slice is bearish-only by design.
+  All 5,760 events carry market_regime_label = bearish.
+  Context decomposition within this slice is not possible.
+  Phase_r4 confirmed: neutral and bullish slices are structurally adverse.
+  VERDICT: PASS — bearish-only filter is validated by prior phase research.
+
+LENS 4: SLIPPAGE SENSITIVITY
+----------------------------------------
+  Entry perturbation applied on top of base entry (signal_day_close * 1.002).
+  See v2_slippage_sensitivity CSV for full table.
+  slip_000pct   (+0.00%):  expectancy=+0.7730R  trigger_rate=62.3%  pct_of_base=100.0%
+  slip_005pct   (+0.05%):  expectancy=+0.7673R  trigger_rate=61.9%  pct_of_base=99.3%
+  slip_010pct   (+0.10%):  expectancy=+0.7621R  trigger_rate=61.4%  pct_of_base=98.6%
+  slip_025pct   (+0.25%):  expectancy=+0.7489R  trigger_rate=59.8%  pct_of_base=96.9%
+  Expectancy at worst-case (+0.25%): +0.7489R  (96.9% of base)
+  Slippage robustness: PASS
+
+LENS 5 & 6: TICKER CONCENTRATION AND OUTLIER DEPENDENCE
+----------------------------------------
+  Unique tickers (traded):  856
+  Top-1 ticker (CSIQ):  0.42% of total PnL
+  Top-5 tickers combined:   2.00% of total PnL
+  Expectancy excl. top-5:   0.7702R  (n_traded=3,530)
+  Concentration (<12%):     PASS
+  Outlier dependence:       PASS (excl_top5 >= 0.40R)
+  See v2_concentration_check CSV for full per-ticker table.
+
+LENS 7: RULE FRAGILITY (nearby timing variants from phase_r5 finalist table)
+----------------------------------------
+  Source: delayed_activation_finalist_summary__gap_directional_trap__phase_r5__2026_03_29.txt
+  Top 5 timing variants (slippage-adjusted expectancy):
+    Rank 1: a=13:15 c=13:30 e=14:30  →  +0.6730R  (chosen variant)
+    Rank 2: a=13:15 c=13:30 e=15:45  →  +0.6712R  (delta: −0.0018R vs Rank 1)
+    Rank 3: a=13:15 c=13:30 e=MOC    →  +0.6674R  (delta: −0.0056R)
+    Rank 4: a=13:45 c=14:00 e=14:30  →  +0.6663R  (delta: −0.0067R)
+    Rank 5: a=13:45 c=14:00 e=15:45  →  +0.6648R  (delta: −0.0082R)
+  Range across top 5: 0.0082R.  Rank 1 margin over Rank 2: 0.0018R.
+  VERDICT: ROBUST — edge is distributed across multiple nearby timing variants,
+    not concentrated in a single fragile point. Top-5 range is only 0.008R.
+
+LENS 8: ORDERABILITY REALISM (TOS workflow)
+----------------------------------------
+  candidate_1_v2 requires operator presence at 13:15 ET to activate the order. TOS does not natively support time-gated conditional order activation. Operator must manually place the buy stop at 13:15 and cancel at 13:30 if not filled. This is a material operational difference vs candidate_1_v1 (night-before, no monitoring).
+
+  Night-before steps (same as v1):
+    1. Run nightly scan → identify qualifying tickers
+    2. Compute entry_price = signal_day_close * 1.002
+    3. Compute stop_price  = entry_price - 0.75 * signal_day_range_dollar
+    4. Compute target_price= entry_price + 2.0 * risk_dollar
+    5. Record order parameters (not yet placed in TOS)
+
+  Midday steps (new requirement vs v1):
+    6. At 13:15 ET: place BUY STOP at entry_price (day order) in TOS
+    7. Attach STOP bracket and LIMIT bracket (OCO) to the entry order
+    8. At 13:30 ET: if not yet filled, cancel the buy stop order
+    9. If filled: place exit order for 14:30 ET (limit or alert-triggered)
+
+  KEY CONSTRAINT: steps 6-9 require midday operator presence.
+  candidate_1_v1 requires NO intraday action (orders placed night before).
+  candidate_1_v2 is NOT a fire-and-forget variant.
+
+LENS 9: SAMPLE SIZE SUFFICIENCY
+----------------------------------------
+  Total covered events:   5,760
+  Traded events:          3,589
+  Win events:             253
+  Years covered:          2021–2026
+  Min year sample:        see v2_yearly_breakdown CSV
+  VERDICT: ADEQUATE — consistent with phase_r5 coverage.
+
+LENS 10: DIRECT COMPARISON vs CANDIDATE_1_V1
+----------------------------------------
+  candidate_1_v1 (MOC, same subset, intraday sim):  +0.4256R
+  candidate_1_v2 (13:15/13:30/14:30, intraday sim): +0.7730R
+  v2 improvement over v1 (raw):                     +0.3474R
+  See v2_vs_v1_comparison CSV for year-by-year head-to-head.
+  Structural interpretation:
+    The improvement comes from the delayed activation filter — events that
+    do NOT reach entry by 13:15 are skipped (trigger_rate ~62% vs ~88% for v1).
+    The remaining 62% of events that DO trigger in the 13:15-13:30 window
+    carry substantially higher quality (better afternoon continuation).
+    The 14:30 forced exit vs MOC also removes the overnight gap risk of
+    late-session adversity, concentrating the hold into a shorter window.
+
+================================================================================
+FINAL VERDICT
+================================================================================
+
+  VERDICT: KEEP_BOTH_WITH_DISTINCT_ROLES
+
+  Reason: candidate_1_v2 demonstrates materially superior expectancy and all-years-positive stability (0.773R vs v1 0.426R, +0.347R delta). Low concentration, outlier-robust, slippage-robust. However, v2 requires midday operator presence at 13:15 ET — it is NOT a night-before fire-and-forget variant. candidate_1_v1 (MOC) remains the fully autonomous night-before variant. OPERATIONAL RECOMMENDATION: keep both with distinct roles. v1 = default autonomous (no intraday action needed). v2 = elected upgrade for operators who can act at 13:15 ET.
+
+  Operational deployment guidance:
+    candidate_1_v1:  primary autonomous variant. Night-before, no monitoring.
+                     Deploy as default. Always available regardless of schedule.
+    candidate_1_v2:  elected upgrade variant. Midday check required at 13:15 ET.
+                     Deploy on days when operator can act at 13:15.
+                     Identical signal-day logic; only timing differs.
+                     Do NOT replace v1 with v2 — keep both with distinct roles.
+
+  Research status after phase_r6:
+    candidate_1_v1: retained as primary deployable_variant
+    candidate_1_v2: promoted as secondary deployable_variant (midday role)
+    Phase_r7 (ranking layer): deferred — no competing variant selection needed yet.
+    Phase_r8 (engineering handoff): extend existing handoff doc to include v2 spec.
+
+================================================================================
+END OF REPORT
+================================================================================

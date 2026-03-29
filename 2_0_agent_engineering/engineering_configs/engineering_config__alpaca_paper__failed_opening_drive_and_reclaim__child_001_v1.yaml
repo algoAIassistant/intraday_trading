@@ -1,0 +1,77 @@
+# engineering_config__alpaca_paper__failed_opening_drive_and_reclaim__child_001_v1.yaml
+#
+# Alpaca Paper Trading configuration for:
+#   failed_opening_drive_and_reclaim__child_001_v1
+#
+# Phase: phase_e1 (Alpaca paper integration)
+# Created: 2026-03-26
+#
+# CREDENTIALS: Never hardcode API keys here.
+# Set environment variables before running:
+#
+#   PowerShell (Windows):
+#     $env:ALPACA_API_KEY    = "your_key_here"
+#     $env:ALPACA_API_SECRET = "your_secret_here"
+#
+#   Bash/zsh (Linux/macOS):
+#     export ALPACA_API_KEY=your_key_here
+#     export ALPACA_API_SECRET=your_secret_here
+#
+# ORDER SUBMISSION: submit_orders defaults to false (safe / dry-run).
+# To enable live paper order submission, set:
+#   alpaca_submit_orders: true
+#
+# IMPORTANT: The 'rules' section is inherited from the V1 frozen survivor.
+# Do not modify rules here — they are enforced in the strategy module itself.
+
+strategy_id: "failed_opening_drive_and_reclaim__child_001_v1"
+track: "intraday_same_day"
+family: "failed_opening_drive_and_reclaim"
+engineering_phase: "phase_e1"
+
+# ---------------------------------------------------------------------------
+# Alpaca credentials — read from environment variables
+# ---------------------------------------------------------------------------
+alpaca_api_key_env: "ALPACA_API_KEY"
+alpaca_api_secret_env: "ALPACA_API_SECRET"
+
+# ---------------------------------------------------------------------------
+# Alpaca endpoints
+# ---------------------------------------------------------------------------
+alpaca_paper_base_url: "https://paper-api.alpaca.markets"
+alpaca_data_base_url: "https://data.alpaca.markets"
+
+# ---------------------------------------------------------------------------
+# Order submission — SAFE DEFAULT: false
+# Set to true only when ready to submit live paper orders.
+# With false: runs full session logic and logs every intended order,
+#             but does not send anything to Alpaca.
+# With true:  submits market day orders at each signal and at session exit.
+# ---------------------------------------------------------------------------
+alpaca_submit_orders: false
+
+# ---------------------------------------------------------------------------
+# Regime gate
+# ---------------------------------------------------------------------------
+# Path is relative to repo root (or absolute)
+regime_map_path: "2_0_agent_engineering/engineering_configs/engineering_regime_map__2026_03_26.csv"
+
+# ---------------------------------------------------------------------------
+# Paper trading controls (used for position sizing and fill-price logging)
+# Same values as phase_e0 — do not change without reopening research.
+# ---------------------------------------------------------------------------
+roundtrip_slippage_bp: 10
+portfolio_value_usd: 50000
+
+# ---------------------------------------------------------------------------
+# Portfolio-level risk controls
+# ---------------------------------------------------------------------------
+max_open_positions: 5
+max_position_size_pct: 0.10
+daily_loss_limit_pct: -0.02
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+output_dir: "2_0_agent_engineering/engineering_runtime_outputs"
+log_level: "INFO"

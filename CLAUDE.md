@@ -53,6 +53,13 @@ Rules:
 This track is allowed but not the current default.
 Use it only when the user explicitly opens swing work or when archival reference is needed.
 
+### `plan_next_day_day_trade`
+
+This track is for night-before day-trade planning via Thinkorswim conditional-order workflow.
+When a session specifies `active track = plan_next_day_day_trade`, this track overrides the `intraday_same_day` default for that session.
+Full phase model, track rules, and canonical doc pointers: `.claude/rules/plan_next_day_day_trade_rules.md`.
+Do not shorten the track name. Do not revert to `intraday_same_day` defaults mid-session if this track is active.
+
 ## Top-level workspace structure
 
 The repo should keep this permanent structure:
@@ -318,4 +325,11 @@ Until explicitly changed by the user, assume:
 - swing remains reference/secondary
 - research output should favor stock-level intraday observables first
 - market context is validation context unless explicitly promoted later
+
+## Session track override
+
+If a session explicitly opens with `active track = plan_next_day_day_trade`:
+- override the `intraday_same_day` default for that session only
+- read `.claude/rules/plan_next_day_day_trade_rules.md` and the family tree master doc before proceeding
+- do not revert to `intraday_same_day` defaults mid-session
 

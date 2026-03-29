@@ -1,0 +1,189 @@
+# variant_spec__gap_directional_trap__candidate_1_v2
+# track:  plan_next_day_day_trade
+# phase:  phase_r8__research_to_engineering_handoff
+# date:   2026-03-29
+
+# This is the machine-friendly specification for the LIVE PRODUCTION variant.
+# v2 is the chosen live operational target. v1 remains reference/research fallback only.
+# See handoff_note__candidate_1_v2_as_live_variant__2026_03_29.md for the operator decision.
+# See v2_validation_summary / v2_yearly_breakdown in phase_r6 folder for full v2 research output.
+
+variant_id: gap_directional_trap__bearish_medium_large__candidate_1_v2
+family_name: gap_directional_trap
+track: plan_next_day_day_trade
+production_priority: 1
+research_status: deployable_variant_phase_r6_v2_validated_2026_03_29
+execution_model: half_automation_half_manual_thinkorswim_conditional_orders
+
+operator_decision: v2_is_live_target__v1_is_reference_only
+
+# ─── SIGNAL SLICE FILTER (unchanged from v1) ────────────────────────────────
+
+slice:
+  universe_source: 0_1_shared_master_universe/shared_symbol_lists/shared_master_symbol_list_us_common_stocks.csv
+  conditions:
+    gap_direction:
+      field: gap_direction
+      operator: "=="
+      value: gap_up
+    close_location:
+      field: signal_day_close_location
+      formula: (signal_day_close - signal_day_low) / (signal_day_high - signal_day_low)
+      operator: "<"
+      threshold: 0.20
+    market_regime:
+      field: market_regime_label
+      operator: "=="
+      value: bearish
+      source: phase_r1_market_context_model/market_context_model_plan_next_day_day_trade.csv
+      join_key: signal_date
+    gap_size_band:
+      field: gap_size_band
+      operator: "in"
+      values: [medium, large]
+      derivation:
+        small:  abs(gap_pct) < 0.015
+        medium: 0.015 <= abs(gap_pct) < 0.030
+        large:  abs(gap_pct) >= 0.030
+
+# ─── ORDER LOGIC ────────────────────────────────────────────────────────────
+
+entry:
+  type: buy_stop
+  order_style: day_order
+  formula: entry_price = signal_day_close * 1.002
+  buffer_pct: 0.002
+  activation_rule: activate_order_at_13_15_et
+  note: |
+    Place buy stop order at entry_price the night before.
+    Set order to activate no earlier than 13:15 ET on trade day.
+    Do NOT place at market open — this is a delayed-activation variant.
+
+stop:
+  type: structure_based_range_proxy
+  formula: |
+    risk_dollar = 0.75 * signal_day_range_dollar
+    stop_price  = fill_price - risk_dollar
+  range_proxy_factor: 0.75
+  approximate_risk_pct: 0.047
+  note: wide disaster stop; expected to fire ~13-15% of triggered trades
+
+target:
+  type: fixed_r_multiple
+  r_multiple: 2.0
+  formula: |
+    risk_dollar  = fill_price - stop_price
+    target_price = fill_price + (2.0 * risk_dollar)
+  note: target fires ~4-5% of triggered trades; forced 14:30 ET exit is primary
+
+cancel:
+  type: time_based
+  cancel_if_not_triggered_by_et: "13:30"
+  note: |
+    If the buy stop has not triggered by 13:30 ET, cancel the order.
+    Do not wait for end-of-day expiry on this variant.
+
+exit:
+  type: time_forced_flatten
+  forced_exit_time_et: "14:30"
+  note: |
+    Flatten any open position at 14:30 ET. Do not hold to close.
+    Cancel the bracket if stop or target already fired before 14:30.
+    This is NOT a MOC order — it is a time-based manual flatten.
+
+# ─── KEY DIFFERENCE FROM V1 ─────────────────────────────────────────────────
+
+v2_vs_v1_differences:
+  signal_logic: identical
+  entry_formula: identical
+  stop_formula: identical
+  target_formula: identical
+  activation_time: "13:15 ET (v1 activates at market open)"
+  cancel_window: "cancel if not filled by 13:30 ET (v1 has no mandatory cancel)"
+  exit_rule: "14:30 ET forced flatten (v1 exits via MOC)"
+  rationale: |
+    Delayed activation study (phase_r5 batch_2 / 2026-03-29) showed that restricting
+    to a 13:15–13:30 entry window and exiting at 14:30 improves the quality distribution
+    of filled trades by filtering out morning volatility. v2 is the validated live path.
+
+# ─── PERFORMANCE (PHASE_R6 V2 VALIDATED) ────────────────────────────────────
+
+performance:
+  slice_label: gap_up_cl_low_020__bearish__medium_plus_large__v2_execution
+  source_files:
+    - phase_r6_deployable_variant_validation/v2_validation_summary__gap_directional_trap__phase_r6__2026_03_29.csv
+    - phase_r6_deployable_variant_validation/v2_yearly_breakdown__gap_directional_trap__phase_r6__2026_03_29.csv
+    - phase_r6_deployable_variant_validation/v2_slippage_sensitivity__gap_directional_trap__phase_r6__2026_03_29.csv
+    - phase_r6_deployable_variant_validation/v2_vs_v1_comparison__gap_directional_trap__phase_r6__2026_03_29.csv
+  note: |
+    See source_files above for full v2 research figures.
+    v1 reference expectancy was +0.244R (phase_r6 2026-03-27).
+    Confirm v2 expectancy from v2_validation_summary.
+
+# ─── TOS WORKFLOW SUMMARY ───────────────────────────────────────────────────
+
+tos_workflow:
+  night_before:
+    step_1: run nightly scan and selection after market close
+    step_2: review Telegram signal(s) for next trade day
+    step_3: for each signal, compute shares = account_risk_dollar / risk_dollar
+    step_4: set up buy stop order at entry_price in TOS (conditional order)
+    step_5: configure activation to start no earlier than 13:15 ET
+    step_6: attach STOP bracket at stop_price
+    step_7: attach LIMIT bracket at target_price (OCO with stop)
+    step_8: note reminder to cancel if not triggered by 13:30 ET
+    step_9: note reminder to flatten at 14:30 ET if still open
+  trade_day_actions:
+    at_13_15_et: verify conditional order is active (or place if not automated)
+    at_13_30_et: cancel order if not yet triggered
+    at_14_30_et: flatten any open position (manual)
+  constraint: do not adjust stops or targets intraday
+
+# ─── DATA DEPENDENCIES ──────────────────────────────────────────────────────
+
+data_dependencies:
+  universe_file: 0_1_shared_master_universe/shared_symbol_lists/shared_master_symbol_list_us_common_stocks.csv
+  daily_price_cache: 1_0_strategy_research/research_data_cache/daily/
+  market_context_model: >
+    1_0_strategy_research/research_outputs/family_lineages/plan_next_day_day_trade/
+    phase_r1_market_context_model/market_context_model_plan_next_day_day_trade.csv
+
+# ─── NIGHTLY SIGNAL PACK OUTPUT FIELDS ──────────────────────────────────────
+
+nightly_output_fields:
+  - ticker
+  - signal_date
+  - trade_date
+  - variant_id
+  - entry_price
+  - stop_price
+  - target_price
+  - risk_dollar
+  - risk_pct
+  - activate_order_at_et
+  - cancel_if_not_triggered_by_et
+  - forced_exit_time_et
+  - same_day_exit_rule
+  - cancel_condition_text
+  - gap_direction
+  - gap_pct
+  - gap_size_band
+  - close_location
+  - market_regime_label
+  - signal_day_range_dollar
+  - position_sizing_note
+  - warning_flags
+
+# ─── ENGINEERING HANDOFF LOCATION ───────────────────────────────────────────
+
+engineering_module:
+  path: >
+    2_0_agent_engineering/integrated_strategy_modules/plan_next_day_day_trade/
+    gap_directional_trap__bearish_medium_large__candidate_1_v2/
+  nightly_scan: engineering_nightly_signal_scan__gap_directional_trap__candidate_1_v2.py
+  selection_layer: engineering_selection_layer__gap_directional_trap__candidate_1_v2.py
+  manifest: engineering_module_manifest__gap_directional_trap__candidate_1_v2.md
+
+orchestrator: 2_0_agent_engineering/engineering_nightly_orchestrator__gap_directional_trap__candidate_1_v2.py
+telegram: 2_0_agent_engineering/engineering_source_code/notifications/telegram_delivery__gap_directional_trap__candidate_1_v2.py
+automation: .github/workflows/nightly_gap_directional_trap_v2.yml

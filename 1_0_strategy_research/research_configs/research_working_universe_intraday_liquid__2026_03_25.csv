@@ -1,0 +1,301 @@
+ticker,name,primary_exchange,latest_close,avg_volume
+AA,Alcoa Corporation,XNYS,56.68,6755715
+AAL,American Airlines Group Inc.,XNAS,10.71,65310292
+ACI,"Albertsons Companies, Inc.",XNYS,16.86,6927008
+ADT,ADT Inc.,XNYS,6.54,12117833
+AEG,Aegon Ltd.,XNYS,6.96,7162381
+AEO,American Eagle Outfitters,XNYS,16.32,9129479
+AES,AES Corporation,XNYS,14.13,12622683
+AFRM,"Affirm Holdings, Inc. Class A Common Stock",XNAS,44.79,6773746
+AG,FIRST MAJESTIC SILVER CORP,XNYS,20.1,22295892
+AGNC,AGNC Investment Corp. Common Stock,XNAS,9.94,23766134
+AI,"C3.ai, Inc.",XNYS,8.29,6973555
+AIG,"American International Group, Inc.",XNYS,74.34,4527977
+AKTS,"Aktis Oncology, Inc. Common stock",XNAS,18.63,11224943
+AMPX,"Amprius Technologies, Inc.",XNYS,17.76,7294518
+APA,APA Corporation Common Stock,XNAS,40.8,7538109
+APLD,Applied Digital Corporation Common Stock,XNAS,26.79,34910335
+AQN,Algonquin Power & Utilities Corp,XNYS,6.29,7170300
+ARCC,Ares Capital Corporation,XNAS,17.96,5358131
+ARDX,"Ardelyx, Inc.",XNAS,5.35,4422439
+ARRY,"Array Technologies, Inc. Common Stock",XNAS,7.24,6992605
+AS,"Amer Sports, Inc.",XNYS,33.09,4586104
+ASAN,"Asana, Inc. Class A Common Stock",XNYS,6.24,4051546
+ASM,Avino Silver & Gold Mines Ltd. (Canada),XASE,5.97,5468364
+ASTS,"AST SpaceMobile, Inc. Class A Common Stock",XNAS,86.98,12888958
+B,Barrick Mining Corporation,XNYS,38.03,14724250
+BAC,Bank of America Corporation,XNYS,48.14,40560384
+BAX,Baxter International Inc.,XNYS,16.72,7253212
+BBY,"Best Buy Company, Inc.",XNYS,61.71,4096375
+BCRX,BioCryst Pharmaceuticals Inc,XNAS,9.66,4462637
+BEN,"Franklin Resources, Inc.",XNYS,23.67,4680192
+BF.B,Brown-Forman Corporation Class B,XNYS,22.8,4386142
+BMY,Bristol-Myers Squibb Co.,XNYS,57.39,14494801
+BN,Brookfield Corporation,XNYS,39.22,4296452
+BSX,Boston Scientific Corp.,XNYS,68.15,10009709
+BULL,Webull Corporation Class A Ordinary Shares,XNAS,5.13,15045224
+CAG,"Conagra Brands, Inc.",XNYS,15.56,10696972
+CAVA,"CAVA Group, Inc.",XNYS,84.43,4074855
+CCC,CCC Intelligent Solutions Holdings Inc. Common Stock,XNAS,6.12,11048178
+CCL,Carnival Corporation,XNYS,25.47,22813529
+CDE,"Coeur Mining, Inc.",XNYS,18.31,18909157
+CELH,"Celsius Holdings, Inc. Common Stock",XNAS,37.045,6346809
+CFG,"Citizens Financial Group, Inc.",XNYS,58.94,4927402
+CHWY,"Chewy, Inc.",XNYS,23.45,7476943
+CL,Colgate-Palmolive Company,XNYS,84.53,5963730
+CLF,Cleveland-Cliffs Inc.,XNYS,8.31,24548848
+CLSK,CLEANSPARK INC,XNAS,9.58,27751698
+CMCSA,Comcast Corp,XNAS,29.22,28447932
+CMG,"Chipotle Mexican Grill, Inc.",XNYS,32.76,18018439
+CNC,Centene Corporation,XNYS,32.98,9644035
+CNH,CNH INDUSTRIAL N.V.,XNYS,10.74,15168181
+CNP,"CenterPoint Energy, Inc.",XNYS,41.88,5385369
+CNQ,Canadian Natural Resources Limited,XNYS,49.02,7477254
+COLD,"Americold Realty Trust, Inc.",XNYS,11.33,4834523
+COMP,"Compass, Inc.",XNYS,8.1,12164682
+CPB,The Campbell's Company Common Stock,XNAS,20.91,6028594
+CPNG,"Coupang, Inc.",XNYS,18.52,14444666
+CRBG,"Corebridge Financial, Inc.",XNYS,23.48,4190245
+CRGY,Crescent Energy Company,XNYS,13.08,5246884
+CRML,Critical Metals Corp. Ordinary Shares,XNAS,7.99,10422004
+CRWV,"CoreWeave, Inc. Class A Common Stock",XNAS,83.02,25078398
+CSCO,"Cisco Systems, Inc. Common Stock (DE)",XNAS,80.86,21738027
+CSGP,CoStar Group Inc,XNAS,41.46,4171359
+CSX,CSX Corporation,XNAS,38.87,15638495
+CTRA,Coterra Energy Inc.,XNYS,35.02,8586001
+CTSH,Cognizant Technology Solutions,XNAS,60.24,4738722
+CTVA,"Corteva, Inc. Common Stock",XNYS,80.58,4116008
+CVE,Cenovus Energy Inc.,XNYS,25.44,14040433
+CVS,CVS HEALTH CORPORATION,XNYS,72.8,8393725
+CWAN,"Clearwater Analytics Holdings, Inc.",XNYS,23.19,6509169
+D,"Dominion Energy, Inc Common Stock",XNYS,60.27,5562187
+DAL,"Delta Air Lines, Inc.",XNYS,66.65,9910243
+DCH,Dauch Corporation,XNYS,5.75,8004226
+DD,"DuPont de Nemours, Inc. Common Stock",XNYS,45.33,6665126
+DIS,The Walt Disney Company,XNYS,96.39,10325085
+DJT,Trump Media & Technology Group Corp. Common Stock,XNAS,8.775,7190938
+DKNG,DraftKings Inc. Class A Common Stock,XNAS,23.31,12915412
+DOC,"Healthpeak Properties, Inc.",XNYS,16.7,7676666
+DT,"Dynatrace, Inc.",XNYS,36.55,4015066
+DVN,Devon Energy Corporation,XNYS,50.27,9409669
+DX,"Dynex Capital, Inc.",XNYS,12.46,4919374
+DXCM,"DexCom, Inc.",XNAS,66.6,4896576
+EBAY,eBay Inc,XNAS,89.1,5489967
+EL,The Estee Lauder Companies Inc. Class A,XNYS,71.48,4049576
+ELAN,Elanco Animal Health Incorporated Common Stock,XNYS,24.9,5922771
+ENB,"Enbridge, Inc",XNYS,54.44,4139032
+ENPH,"Enphase Energy, Inc.",XNAS,40.97,7489589
+ENVX,Enovix Corporation Common Stock,XNAS,5.04,7079054
+EOSE,"Eos Energy Enterprises, Inc. Class A Common Stock",XNAS,5.09,17904405
+EPD,Enterprise Products Partners L.P.,XNYS,38.39,4357027
+EQT,EQT CORP,XNYS,65.33,8608163
+EQX,Equinox Gold Corp.,XASE,12.58,13047804
+ET,Energy Transfer LP Common Units representing limited partner interests,XNYS,19.21,14590448
+ETSY,"Etsy, Inc.",XNYS,49.46,4804258
+EXC,Exelon Corporation,XNAS,47.29,7480823
+EXK,Endeavour Silver Corp.,XNYS,8.97,13804082
+F,Ford Motor Company,XNYS,11.84,85065390
+FAST,Fastenal Co,XNAS,44.89,7128110
+FCX,Freeport-McMoran Inc.,XNYS,56.48,17633963
+FE,FirstEnergy Corp.,XNYS,49.16,4632489
+FHN,First Horizon Corporation,XNYS,22.69,7948900
+FIG,"Figma, Inc.",XNYS,21.87,7599325
+FISV,"Fiserv, Inc. Common Stock",XNAS,56.34,5634013
+FITB,Fifth Third Bancorp,XNAS,45.99,7360609
+FLEX,Flex Ltd. Ordinary Shares,XNAS,69.095,4297344
+FLG,"Flagstar Bank, National Association",XNYS,13.14,5722890
+FLNC,"Fluence Energy, Inc. Class A Common Stock",XNAS,16.15,5727021
+FNB,F.N.B. Corp,XNYS,16.46,6437390
+FOLD,"Amicus Therapeutics, Inc",XNAS,14.41,6248741
+FRMI,Fermi Inc. Common Stock,XNAS,7.46,7034145
+FRSH,Freshworks Inc. Class A Common Stock,XNAS,7.95,4254051
+FSLY,"Fastly, Inc. Class A Common Stock",XNAS,28.2,5106467
+FSM,Fortuna Mining Corp.,XNYS,9.21,13159167
+FTI,TechnipFMC plc Ordinary Share,XNYS,70.16,4363914
+FTNT,"Fortinet, Inc.",XNAS,79.34,6050006
+GAP,"The Gap, Inc.",XNYS,25.49,9307395
+GEN,Gen Digital Inc. Common Stock,XNAS,19.77,4812512
+GIS,"General Mills, Inc.",XNYS,36.8,6493738
+GLXY,Galaxy Digital Inc. Class A Common Stock,XNAS,21.3,7784149
+GM,General Motors Company,XNYS,76.57,9768659
+GME,GameStop Corp. Class A,XNYS,22.81,10118823
+GOLD,"Gold.com, Inc.",XNYS,43.5,15572444
+GPGI,"GPGI, Inc.",XNYS,18.42,4242703
+GPK,Graphic Packaging Holding Company,XNYS,8.98,4709602
+GT,Goodyear Tire & Rubber,XNAS,6.38,7304108
+GTLB,GitLab Inc. Class A Common Stock,XNAS,20.66,4704460
+GTM,ZoomInfo Technologies Inc Common Stock,XNAS,5.75,5820034
+HAL,Halliburton Company,XNYS,38.11,13915900
+HBAN,Huntington Bancshares Inc,XNAS,15.48,29521070
+HBM,Hudbay Minerals Inc.,XNYS,18.95,6859514
+HIMS,"Hims & Hers Health, Inc.",XNYS,21.34,32907673
+HL,Hecla Mining Company,XNYS,17.93,23168956
+HOOD,"Robinhood Markets, Inc. Class A Common Stock",XNAS,69.08,37110649
+HPE,Hewlett Packard Enterprise Company,XNYS,23.9,22515152
+HPQ,HP Inc.,XNYS,18.89,12337271
+HRL,Hormel Foods Corporation,XNYS,22.65,4143882
+HST,"Host Hotels & Resorts, Inc.",XNAS,18.97,9159542
+HUN,Huntsman Corporation,XNYS,11.41,5128917
+HUT,Hut 8 Corp. Common Stock,XNAS,53.25,6273868
+IAG,IAMGold Corporation,XNYS,17.02,12520152
+IBRX,"ImmunityBio, Inc. Common Stock",XNAS,7.415,16545034
+INTC,Intel Corp,XNAS,44.06,100927388
+INVH,Invitation Homes Inc. Common Stock,XNYS,25.01,4803760
+IONQ,"IonQ, Inc.",XNYS,32.7,23106347
+IOT,Samsara Inc.,XNYS,32.09,6094173
+IP,International Paper Co.,XNYS,36.14,5189086
+IREN,IREN Limited Ordinary Shares,XNAS,41.12,31418524
+JBS,JBS N.V.,XNYS,15.34,5301184
+JHX,James Hardie Industries plc,XNYS,19.36,6333430
+JOBY,"Joby Aviation, Inc.",XNYS,8.99,29110221
+KDP,Keurig Dr Pepper Inc.,XNAS,26.21,14172258
+KEY,KeyCorp,XNYS,19.82,19444423
+KGC,Kinross Gold Corporation,XNYS,27.92,15682904
+KHC,The Kraft Heinz Company Common Stock,XNAS,21.32,14807218
+KIM,Kimco Realty Corp.,XNYS,22.56,4944103
+KMI,"Kinder Morgan, Inc.",XNYS,33.93,14024831
+KMX,CarMax Inc.,XNYS,42.1,4027450
+KO,Coca-Cola Company,XNYS,74.67,16752708
+KSS,Kohls Corporation,XNYS,12.35,8209202
+KVUE,Kenvue Inc.,XNYS,17.55,31015054
+LCID,"Lucid Group, Inc. Common Stock",XNAS,10.36,10434201
+LUMN,"Lumen Technologies, Inc.",XNYS,6.79,14460725
+LUV,Southwest Airlines Co.,XNYS,39.83,10757405
+LVS,Las Vegas Sands Corp.,XNYS,54.9,5540980
+LYB,LyondellBasell Industries N.V. Class A,XNYS,76.01,5479471
+LYFT,"Lyft, Inc. Class A Common Stock",XNAS,13.16,17760186
+M,Macy's Inc.,XNYS,18.38,7769470
+MARA,"MARA Holdings, Inc. Common Stock",XNAS,8.25,47501657
+MAT,"Mattel, Inc.",XNAS,14.95,4317820
+MBLY,Mobileye Global Inc. Class A Common Stock,XNAS,7.12,5877665
+MCHP,Microchip Technology Inc,XNAS,65.63,9397515
+MDLN,Medline Inc. Class A common stock,XNAS,42.03,7187321
+MDT,Medtronic plc,XNYS,86.58,7541829
+MGM,MGM RESORTS INTERNATIONAL,XNYS,37.11,5012727
+MNST,Monster Beverage Corporation,XNAS,73.0,5818915
+MO,"Altria Group, Inc.",XNYS,64.32,9269216
+MOS,The Mosaic Company,XNYS,25.2,6380659
+MP,MP Materials Corp.,XNYS,53.29,11325885
+MRNA,"Moderna, Inc. Common Stock",XNAS,51.34,10792583
+MRVL,"Marvell Technology, Inc. Common Stock",XNAS,92.36,19195974
+MTCH,"Match Group, Inc",XNAS,30.39,4520330
+NCLH,Norwegian Cruise Line Holdings Ltd. Ordinary Shares,XNYS,19.66,17059515
+NEE,"NextEra Energy, Inc.",XNYS,91.62,10756335
+NEM,Newmont Corporation,XNYS,99.02,11522825
+NEOG,Neogen Corp,XNAS,9.11,5206246
+NFLX,NetFlix Inc,XNAS,90.92,41356209
+NG,NovaGold Resources Inc.,XASE,8.08,4028254
+NI,NiSource Inc.,XNYS,45.68,4238980
+NKE,"Nike, Inc.",XNYS,53.49,16928320
+NLY,Annaly Capital Management. Inc.,XNYS,21.08,7860329
+NOV,NOV Inc.,XNYS,19.51,4235572
+NTLA,"Intellia Therapeutics, Inc",XNAS,12.81,5396337
+NVAX,Novavax Inc,XNAS,9.26,6061144
+NVTS,Navitas Semiconductor Corporation Common Stock,XNAS,9.28,29637207
+NXE,NexGen Energy Ltd.,XNYS,11.63,9129904
+O,Realty Income Corporation,XNYS,60.46,5928968
+OBDC,Blue Owl Capital Corporation,XNYS,11.18,4451013
+OGN,Organon & Co.,XNYS,6.11,5128425
+OKE,"Oneok, Inc.",XNYS,90.94,4149887
+OKLO,Oklo Inc.,XNYS,54.96,16036311
+OMC,Omnicom Group Inc.,XNYS,75.39,4262929
+ON,ON Semiconductor Corp,XNAS,62.34,9349899
+ONDS,Ondas Inc. Common Stock,XNAS,10.68,56674704
+ONON,On Holding AG,XNYS,39.59,5978446
+OPEN,Opendoor Technologies Inc Common Stock,XNAS,5.18,149648449
+ORC,"Orchid Island Capital, Inc.",XNYS,6.95,5305757
+ORLY,"O'Reilly Automotive, Inc.",XNAS,87.99,5643806
+OWL,Blue Owl Capital Inc.,XNYS,8.96,14482743
+OXY,Occidental Petroleum Corporation,XNYS,61.25,12061181
+PAAS,Pan American Silver Corp.,XNYS,49.87,6534091
+PAGS,PagSeguro Digital Ltd.,XNYS,9.96,4840518
+PATH,"UiPath, Inc.",XNYS,11.07,21262967
+PCG,PG&E Corporation,XNYS,17.34,23194333
+PFE,Pfizer Inc.,XNYS,26.96,51297928
+PINS,"Pinterest, Inc. Class A Common Stock",XNYS,18.39,14004801
+PL,Planet Labs PBC,XNYS,31.83,10517970
+POET,POET Technologies Inc. Common Shares,XNAS,5.74,5927055
+PPL,PPL Corporation,XNYS,37.06,6626536
+PRMB,Primo Brands Corporation,XNYS,18.51,6376884
+PSKY,Paramount Skydance Corporation Class B Common Stock,XNAS,9.17,12113200
+PTEN,Patterson-UTI Energy Inc,XNAS,10.89,10536969
+PYPL,"PayPal Holdings, Inc. Common Stock",XNAS,44.21,15526124
+QBTS,D-Wave Quantum Inc.,XNYS,15.93,47453483
+QS,QuantumScape Corporation Class A Common Stock,XNAS,6.81,27747324
+QUBT,Quantum Computing Inc. Common,XNAS,7.45,24054872
+QXO,"QXO, Inc.",XNYS,20.19,7778052
+RBLX,Roblox Corporation,XNYS,55.0,8982578
+RCAT,"Red Cat Holdings, Inc. Common Stock",XNAS,16.08,10708331
+REPL,"Replimune Group, Inc.",XNAS,6.97,4195729
+RF,Regions Financial Corp.,XNYS,25.64,15603671
+RGTI,"Rigetti Computing, Inc. Common Stock",XNAS,15.6,50428452
+RIG,Transocean LTD.,XNYS,6.63,41419021
+RIOT,"Riot Platforms, Inc. Common Stock",XNAS,14.33,28936020
+RITM,Rithm Capital Corp.,XNYS,9.14,6974258
+RIVN,"Rivian Automotive, Inc. Class A Common Stock",XNAS,16.1,38719874
+RKLB,Rocket Lab Corporation Common Stock,XNAS,66.07,21714584
+RKT,"Rocket Companies, Inc.",XNYS,14.17,26010443
+ROIV,Roivant Sciences Ltd. Common Shares,XNAS,26.87,6937851
+RPRX,Royalty Pharma plc Class A Ordinary Shares,XNAS,45.57,4155283
+RUN,Sunrun Inc,XNAS,12.75,13867341
+S,"SentinelOne, Inc.",XNYS,13.04,7005724
+SATL,Satellogic Inc. Class A Ordinary Shares,XNAS,5.38,4083001
+SBET,"Sharplink, Inc. Common Stock",XNAS,7.17,16121433
+SBUX,Starbucks Corp,XNAS,91.98,9995756
+SEDG,"SolarEdge Technologies, Inc.",XNAS,47.67,4306670
+SERV,Serve Robotics Inc. Common Stock,XNAS,9.22,6968362
+SG,"Sweetgreen, Inc.",XNYS,5.22,5306832
+SHLS,"Shoals Technologies Group, Inc. Class A Common Stock",XNAS,6.85,5707703
+SIRI,"Sirius XM Holdings,  Inc",XNAS,22.36,4027451
+SLB,SLB Limited,XNYS,50.51,17292084
+SMCI,"Super Micro Computer, Inc. Common Stock",XNAS,22.23,36716263
+SO,The Southern Company,XNYS,93.98,5506491
+SOC,Sable Offshore Corp.,XNYS,16.81,5360534
+SOFI,"SoFi Technologies, Inc. Common Stock",XNAS,16.7,67064017
+SOUN,"SoundHound AI, Inc. Class A Common Stock",XNAS,6.36,38110491
+SRPT,"Sarepta Therapeutics,, Inc. Common Stock",XNAS,17.61,6183708
+STLA,Stellantis N.V.,XNYS,6.75,17669820
+STM,STMicroelectronics N.V.,XNYS,31.95,7196715
+STNE,StoneCo Ltd. Class A Common Shares,XNAS,13.98,5755959
+STUB,"StubHub Holdings, Inc.",XNYS,6.59,4493501
+SUNB,"Sunbelt Rentals Holdings, Inc.",XNYS,69.61,6831095
+SVM,Silvercorp Metals Inc. Common Shares,XASE,9.79,6149456
+T,AT&T Inc.,XNYS,28.87,40464582
+TDOC,"Teladoc Health, Inc.",XNYS,5.42,6500907
+TE,T1 Energy Inc.,XNYS,6.61,8849359
+TECK,Teck Resources Limited,XNYS,48.56,4508610
+TEM,"Tempus AI, Inc. Class A Common Stock",XNAS,48.83,8610934
+TFC,Truist Financial Corporation,XNYS,45.32,8746131
+TGB,Taseko Mines Limited,XASE,5.96,8298279
+TLRY,"Tilray Brands, Inc. Common Stock",XNAS,6.66,6011807
+TOST,"Toast, Inc.",XNYS,26.61,8761910
+TSCO,Tractor Supply Co,XNAS,45.49,5741835
+TTD,"The Trade Desk, Inc.",XNAS,22.34,14283465
+UA,"Under Armour, Inc. Class C Common Stock, $0.0003 1/3 par value",XNYS,5.9,4701078
+UAA,"Under Armour, Inc.",XNYS,6.04,12468730
+UAL,"United Airlines Holdings, Inc. Common Stock",XNAS,93.56,6927202
+UAMY,United States Antimony Corporation,XNYS,9.28,10034971
+UCFI,CN Healthy Food Tech Group Corp. Common Stock,XNAS,5.51,5441353
+UEC,Uranium Energy Corp.,XASE,13.19,12750488
+UPS,"United Parcel Service, Inc. Class B",XNYS,98.44,6851147
+UPST,"Upstart Holdings, Inc. Common stock",XNAS,26.6,6245258
+USB,U.S. Bancorp,XNYS,52.14,10137327
+VFC,V.F. Corporation,XNYS,17.3,7980491
+VG,"Venture Global, Inc.",XNYS,16.6,10814467
+VICI,VICI Properties Inc. Common Stock,XNYS,27.3,8942666
+VISN,"Vistance Networks, Inc. Common Stock",XNAS,18.15,4349195
+VKTX,"Viking Therapeutics, Inc",XNAS,32.17,4236128
+VLY,Valley National Bancorp,XNAS,12.27,9232939
+VSNT,"Versant Media Group, Inc. Class A Common Stock",XNAS,36.13,5025208
+VTRS,Viatris Inc. Common Stock,XNAS,13.36,10875485
+WBD,"Warner Bros. Discovery, Inc. Series A Common Stock",XNAS,27.28,47660406
+WEN,The Wendy's Company,XNAS,7.1,7037538
+WFC,Wells Fargo & Co.,XNYS,79.61,16448152
+WMB,Williams Companies Inc.,XNYS,74.46,7344257
+WOLF,"Wolfspeed, Inc.",XNYS,16.67,25796862
+WULF,TeraWulf Inc. Common Stock,XNAS,16.22,40842772
+WY,Weyerhaeuser Company,XNYS,23.54,5365739
+XEL,"Xcel Energy, Inc.",XNAS,77.96,4465180
+XP,XP Inc. Class A Common Stock,XNAS,19.22,6864745
+ZETA,Zeta Global Holdings Corp.,XNYS,16.15,7651870
+ZIM,ZIM Integrated Shipping Services Ltd.,XNYS,26.46,5192225

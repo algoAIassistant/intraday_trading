@@ -1,0 +1,119 @@
+================================================================================
+FINALIST SUMMARY: gap_directional_trap — phase_r5 delayed activation & time exit study
+Generated: 2026_03_29
+================================================================================
+
+1. DATA COVERAGE
+----------------------------------------
+  Full production slice:         9,865 events, 1830 tickers, 2021-05-12 to 2026-03-23
+  Intraday-covered subset:       5,760 events, 883 tickers, 2021-05-12 to 2026-03-19
+  Coverage:                      58.4% of events, 48.3% of tickers
+
+2. BASELINE COMPARISON (representativeness)
+----------------------------------------
+  Full slice daily-bar MOC expectancy:          +0.3956R
+  Intraday subset daily-bar MOC expectancy:     +0.3788R
+  Intraday subset intraday MOC expectancy:      +0.4279R
+  Subset vs full slice delta:                   -0.0168R
+  Assessment: Subset appears representative of full slice (delta < 0.05R).
+
+3. TOP 5 PRACTICAL VARIANTS
+----------------------------------------
+  Rank 1: a=13:15  c=13:30  e=14:30
+    n_total=5760  n_traded=3589  trigger_rate=62.31%
+    win_rate=7.05%  loss_rate=0.03%  time_exit_rate=92.92%
+    expectancy_r=+0.7730R  slippage_adj_expectancy_r=+0.6730R
+    profit_factor=506.00  max_single_loss_r=-1.000R  avg_hold_bars=63
+    vs_intraday_moc_baseline=+0.3451R
+
+    TOS ORDER LOGIC:
+      - Buy Stop trigger:  signal_day_close * 1.002
+      - Stop loss:         fill_price - 0.75 * signal_day_range_dollar
+      - Target:            fill_price + 2.0 * risk_dollar
+      - Order activation:  13:15 ET
+      - Order cancel if not filled by: 13:30 ET
+      - Forced time exit:  14:30 ET (or MOC if MOC)
+
+  Rank 2: a=13:15  c=13:30  e=15:45
+    n_total=5760  n_traded=3589  trigger_rate=62.31%
+    win_rate=8.39%  loss_rate=0.20%  time_exit_rate=91.42%
+    expectancy_r=+0.7712R  slippage_adj_expectancy_r=+0.6712R
+    profit_factor=86.00  max_single_loss_r=-1.000R  avg_hold_bars=127
+    vs_intraday_moc_baseline=+0.3433R
+
+    TOS ORDER LOGIC:
+      - Buy Stop trigger:  signal_day_close * 1.002
+      - Stop loss:         fill_price - 0.75 * signal_day_range_dollar
+      - Target:            fill_price + 2.0 * risk_dollar
+      - Order activation:  13:15 ET
+      - Order cancel if not filled by: 13:30 ET
+      - Forced time exit:  15:45 ET (or MOC if MOC)
+
+  Rank 3: a=13:15  c=13:30  e=MOC
+    n_total=5760  n_traded=3589  trigger_rate=62.31%
+    win_rate=8.86%  loss_rate=0.22%  time_exit_rate=90.92%
+    expectancy_r=+0.7674R  slippage_adj_expectancy_r=+0.6674R
+    profit_factor=79.50  max_single_loss_r=-1.000R  avg_hold_bars=140
+    vs_intraday_moc_baseline=+0.3395R
+
+    TOS ORDER LOGIC:
+      - Buy Stop trigger:  signal_day_close * 1.002
+      - Stop loss:         fill_price - 0.75 * signal_day_range_dollar
+      - Target:            fill_price + 2.0 * risk_dollar
+      - Order activation:  13:15 ET
+      - Order cancel if not filled by: 13:30 ET
+      - Forced time exit:  MOC ET (or MOC if MOC)
+
+  Rank 4: a=13:45  c=14:00  e=14:30
+    n_total=5760  n_traded=3646  trigger_rate=63.30%
+    win_rate=6.72%  loss_rate=0.00%  time_exit_rate=93.28%
+    expectancy_r=+0.7663R  slippage_adj_expectancy_r=+0.6663R
+    profit_factor=nan  max_single_loss_r=-0.742R  avg_hold_bars=38
+    vs_intraday_moc_baseline=+0.3384R
+
+    TOS ORDER LOGIC:
+      - Buy Stop trigger:  signal_day_close * 1.002
+      - Stop loss:         fill_price - 0.75 * signal_day_range_dollar
+      - Target:            fill_price + 2.0 * risk_dollar
+      - Order activation:  13:45 ET
+      - Order cancel if not filled by: 14:00 ET
+      - Forced time exit:  14:30 ET (or MOC if MOC)
+
+  Rank 5: a=13:45  c=14:00  e=15:45
+    n_total=5760  n_traded=3646  trigger_rate=63.30%
+    win_rate=8.17%  loss_rate=0.05%  time_exit_rate=91.77%
+    expectancy_r=+0.7648R  slippage_adj_expectancy_r=+0.6648R
+    profit_factor=298.00  max_single_loss_r=-1.000R  avg_hold_bars=102
+    vs_intraday_moc_baseline=+0.3369R
+
+    TOS ORDER LOGIC:
+      - Buy Stop trigger:  signal_day_close * 1.002
+      - Stop loss:         fill_price - 0.75 * signal_day_range_dollar
+      - Target:            fill_price + 2.0 * risk_dollar
+      - Order activation:  13:45 ET
+      - Order cancel if not filled by: 14:00 ET
+      - Forced time exit:  15:45 ET (or MOC if MOC)
+
+4. RESEARCH QUESTION ANSWERS
+----------------------------------------
+  Q1 (Does delayed activation improve expectancy?):
+    YES. Best combo achieves +0.7730R vs intraday MOC baseline +0.4279R (+0.3451R improvement).
+
+  Q2 (Optimal activation window?):
+    Best activation_start with MOC exit: 13:15 (cancel=13:30, expectancy=+0.7674R)
+
+  Q3 (Does earlier forced exit improve results?):
+    YES. Best non-MOC exit achieves +0.7730R vs MOC baseline +0.4279R.
+
+  Q4 (Optimal time exit window?):
+    Best non-MOC exit time: 14:30 (a=13:15, c=13:30, expectancy=+0.7730R)
+
+  Q5 (Best practical combination?):
+    Best combo: a=13:15, c=13:30, e=14:30 (expectancy=+0.7730R, slippage_adj=+0.6730R, trigger_rate=62.3%, win_rate=7.0%)
+
+  Q6 (Promotion recommendation):
+    PROMOTE as candidate_1_v2. Best delayed-activation + time-exit combo meaningfully exceeds the MOC baseline after slippage adjustment. Proceed to phase_r6 validation for this variant.
+
+================================================================================
+END OF REPORT
+================================================================================

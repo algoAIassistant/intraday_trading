@@ -1,0 +1,11 @@
+# requirements.txt
+# Python dependencies for the AI Trading Assistant — plan_next_day_day_trade track
+# Used by GitHub Actions (nightly pipeline) and local development.
+#
+# Install: pip install -r requirements.txt
+
+massive
+pandas
+pyarrow
+numpy
+requests

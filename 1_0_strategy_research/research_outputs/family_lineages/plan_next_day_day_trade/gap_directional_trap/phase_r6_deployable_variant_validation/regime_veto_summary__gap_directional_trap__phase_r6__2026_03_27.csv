@@ -1,0 +1,13 @@
+slice,candidate_id,label,veto_level,n_events_total,n_vetoed,n_eligible,pct_eligible,n_valid_triggered,expectancy_r,win_rate_pct,loss_rate_pct,time_exit_rate_pct,n_vetoed_2022,n_eligible_2022,n_valid_2022,expectancy_2022
+gap_directional_trap__gap_up_cl_low_020__bearish__medium,candidate_1__S_range_proxy_75pct__T_fixed_2_0r,CANDIDATE_1,no_veto,6320,0,6320,100.0,5573,0.153,3.3,15.16,81.54,0,1689,1395,-0.156
+gap_directional_trap__gap_up_cl_low_020__bearish__medium,candidate_1__S_range_proxy_75pct__T_fixed_2_0r,CANDIDATE_1,vol_gate_020,6320,2094,4226,66.9,3735,0.109,2.52,13.9,83.59,1145,544,449,-0.236
+gap_directional_trap__gap_up_cl_low_020__bearish__medium,candidate_1__S_range_proxy_75pct__T_fixed_2_0r,CANDIDATE_1,vol_gate_025,6320,1499,4821,76.3,4259,0.085,2.63,15.38,81.99,668,1021,880,-0.167
+gap_directional_trap__gap_up_cl_low_020__bearish__medium,candidate_2__S_fixed_3_0pct__T_fixed_3_0r,CANDIDATE_2,no_veto,6320,0,6320,100.0,5573,0.103,3.61,29.41,66.98,0,1689,1395,-0.262
+gap_directional_trap__gap_up_cl_low_020__bearish__medium,candidate_2__S_fixed_3_0pct__T_fixed_3_0r,CANDIDATE_2,vol_gate_020,6320,2094,4226,66.9,3735,0.073,1.79,27.44,70.76,1145,544,449,-0.504
+gap_directional_trap__gap_up_cl_low_020__bearish__medium,candidate_2__S_fixed_3_0pct__T_fixed_3_0r,CANDIDATE_2,vol_gate_025,6320,1499,4821,76.3,4259,0.044,1.93,29.14,68.94,668,1021,880,-0.352
+gap_directional_trap__gap_up_cl_low_020__bearish__medium_plus_large,candidate_1__S_range_proxy_75pct__T_fixed_2_0r,CANDIDATE_1,no_veto,9865,0,9865,100.0,8772,0.244,4.47,13.44,82.09,0,2250,1872,-0.163
+gap_directional_trap__gap_up_cl_low_020__bearish__medium_plus_large,candidate_1__S_range_proxy_75pct__T_fixed_2_0r,CANDIDATE_1,vol_gate_020,9865,3922,5943,60.2,5208,0.077,2.19,14.06,83.76,1519,731,617,-0.282
+gap_directional_trap__gap_up_cl_low_020__bearish__medium_plus_large,candidate_1__S_range_proxy_75pct__T_fixed_2_0r,CANDIDATE_1,vol_gate_025,9865,3096,6769,68.6,5930,0.058,2.33,15.36,82.31,901,1349,1171,-0.186
+gap_directional_trap__gap_up_cl_low_020__bearish__medium_plus_large,candidate_2__S_fixed_3_0pct__T_fixed_3_0r,CANDIDATE_2,no_veto,9865,0,9865,100.0,8772,0.166,7.02,34.12,58.86,0,2250,1872,-0.287
+gap_directional_trap__gap_up_cl_low_020__bearish__medium_plus_large,candidate_2__S_fixed_3_0pct__T_fixed_3_0r,CANDIDATE_2,vol_gate_020,9865,3922,5943,60.2,5208,0.007,2.32,33.66,64.02,1519,731,617,-0.563
+gap_directional_trap__gap_up_cl_low_020__bearish__medium_plus_large,candidate_2__S_fixed_3_0pct__T_fixed_3_0r,CANDIDATE_2,vol_gate_025,9865,3096,6769,68.6,5930,-0.015,2.45,34.97,62.58,901,1349,1171,-0.383

@@ -1,0 +1,9 @@
+bucket,basis,n,mean,median,std,win_rate,p10,p90,t_stat
+large_drive_down__all,drive_end_to_close,2816,-0.2006,-0.219,3.9441,0.4677,-4.529,4.0251,-2.698
+large_drive_down__drive_continued,drive_end_to_close,2126,-1.4432,-0.9538,2.9937,0.3335,-5.0578,1.6513,-22.228
+large_drive_down__reclaimed__all,post_failure_to_close,690,0.3178,0.0633,3.5758,0.5072,-3.2261,4.031,2.335
+large_drive_down__reclaimed__early_lte60,post_failure_to_close,132,0.7948,0.95,4.9094,0.5606,-5.3243,5.8137,1.86
+large_drive_down__reclaimed__late_gt60,post_failure_to_close,558,0.205,0.0,3.1751,0.4946,-2.6838,3.4759,1.525
+large_drive_down__reclaimed__mag2to3,post_failure_to_close,443,0.3132,0.0327,3.3486,0.5011,-2.8057,3.6831,1.969
+large_drive_down__reclaimed__mag3to5,post_failure_to_close,204,0.1739,0.1298,3.3232,0.5147,-3.4677,4.0726,0.748
+large_drive_down__reclaimed__mag5to99,post_failure_to_close,43,1.0483,0.3006,6.1425,0.5349,-5.7569,8.3492,1.119

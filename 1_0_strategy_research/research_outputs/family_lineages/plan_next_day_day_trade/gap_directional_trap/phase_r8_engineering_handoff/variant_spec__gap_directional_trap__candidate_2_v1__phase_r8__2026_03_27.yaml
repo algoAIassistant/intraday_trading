@@ -1,0 +1,184 @@
+# variant_spec__gap_directional_trap__candidate_2_v1
+# track:  plan_next_day_day_trade
+# phase:  phase_r8__research_to_engineering_handoff
+# date:   2026-03-27
+
+# This is the machine-friendly specification for the backup (fixed-%) variant.
+# Read handoff_doc__gap_directional_trap__phase_r8__2026_03_27.md for full context.
+# Candidate_2 uses the same slice and entry as candidate_1; only stop and target differ.
+
+variant_id: gap_directional_trap__bearish_medium_large__candidate_2_v1
+family_name: gap_directional_trap
+track: plan_next_day_day_trade
+production_priority: 2
+research_status: deployable_variant_phase_r6_validated_2026_03_27
+execution_model: half_automation_half_manual_thinkorswim_conditional_orders
+
+# ─── SIGNAL SLICE FILTER ────────────────────────────────────────────────────
+# IDENTICAL to candidate_1_v1 — see that spec for full derivation notes
+
+slice:
+  universe_source: 0_1_shared_master_universe/shared_symbol_lists/shared_master_symbol_list_us_common_stocks.csv
+  conditions:
+    gap_direction:
+      field: gap_direction
+      operator: "=="
+      value: gap_up
+    close_location:
+      field: signal_day_close_location
+      formula: (signal_day_close - signal_day_low) / (signal_day_high - signal_day_low)
+      operator: "<"
+      threshold: 0.20
+    market_regime:
+      field: market_regime_label
+      operator: "=="
+      value: bearish
+      source: phase_r1_market_context_model/market_context_model_plan_next_day_day_trade.csv
+      join_key: signal_date
+    gap_size_band:
+      field: gap_size_band
+      operator: "in"
+      values: [medium, large]
+      derivation:
+        small:  abs(gap_pct) < 0.015
+        medium: 0.015 <= abs(gap_pct) < 0.030
+        large:  abs(gap_pct) >= 0.030
+
+# ─── ORDER LOGIC ────────────────────────────────────────────────────────────
+
+entry:
+  type: buy_stop
+  order_style: day_order
+  formula: entry_price = signal_day_close * 1.002
+  buffer_pct: 0.002
+  note: identical to candidate_1
+
+stop:
+  type: fixed_percentage
+  fixed_risk_pct: 0.030
+  formula: |
+    risk_dollar = fill_price * 0.030
+    stop_price  = fill_price * (1.0 - 0.030)
+               = fill_price * 0.970
+  note: exactly 3% below fill; simpler to plan than range_proxy stop
+  note: fires approximately 34% of triggered trades (much higher than candidate_1)
+
+target:
+  type: fixed_r_multiple
+  r_multiple: 3.0
+  formula: |
+    risk_dollar  = fill_price * 0.030
+    target_price = fill_price + (3.0 * risk_dollar)
+                 = fill_price * (1.0 + 3 * 0.030)
+                 = fill_price * 1.090
+  note: exactly 9% above fill price; straightforward to compute
+
+cancel:
+  type: none
+  note: same as candidate_1; no mandatory cancel condition
+
+exit:
+  type: market_on_close
+  formula: MOC order for same session as entry
+  default_resolution_rate_pct: 58.9
+  note: lower MOC rate than candidate_1 due to higher stop-fire and target-fire rates
+
+# ─── PERFORMANCE (PHASE_R6 VALIDATED) ───────────────────────────────────────
+
+performance:
+  slice_label: gap_up_cl_low_020__bearish__medium_plus_large
+  n_valid_events: 8772
+  expectancy_r: 0.166
+  win_rate_pct: 7.0
+  loss_rate_pct: 34.1  # important: 1-in-3 triggered trades hits stop
+  time_exit_rate_pct: 58.9
+  average_risk_pct: 3.0  # exact (fixed %)
+  slippage_at_025pct_worst: 0.079
+  slippage_verdict: ACCEPTABLE_BUT_THIN
+
+yearly_expectancy:
+  "2021": +0.476
+  "2022": -0.262  # structural bear market year — worse than candidate_1
+  "2023": -0.015  # slightly negative — weaker than candidate_1
+  "2024": +0.160
+  "2025": +0.339
+  "2026": -0.058  # partial year only
+
+yearly_verdict: "4/6 positive on secondary (3/5 full years positive; 2022 and 2023 negative)"
+
+# ─── RISK NOTES ─────────────────────────────────────────────────────────────
+
+risk_notes:
+  position_sizing_warning: |
+    Risk distance is exactly 3.0% of fill price.
+    share count = account_risk_dollar / (fill_price * 0.030).
+    Easier to calculate than candidate_1 but still requires smaller
+    share count than a 1% stop variant.
+  stop_fire_rate_warning: |
+    34% stop-hit rate means approximately 1 in 3 triggered trades hits stop.
+    This generates a loss-heavy trading experience. Operators must
+    have the discipline to absorb frequent stops while awaiting MOC profits.
+    Prefer candidate_1 unless the fixed-% simplicity is operationally important.
+  2022_structural_risk: |
+    Same structural issue as candidate_1: sustained bear market suppresses mechanism.
+    Worse in 2022 (-0.262R vs -0.156R for candidate_1).
+    Additionally, 2023 is slightly negative for this variant.
+  slippage_note: |
+    +0.079R at +0.25% worst-case slippage (77% of baseline).
+    Acceptable but thinner than candidate_1. Less margin for execution error.
+
+# ─── TOS WORKFLOW SUMMARY ───────────────────────────────────────────────────
+
+tos_workflow:
+  step_1: place BUY STOP at entry_price (day order, next session)
+  step_2: attach STOP bracket at stop_price = fill_price * 0.970 (to fill)
+  step_3: attach LIMIT bracket at target_price = fill_price * 1.090 (OCO with stop)
+  step_4: place separate MOC order for same session
+  note: fixed-% stop simplifies TOS setup vs candidate_1 range_proxy stop
+  constraint: do not adjust stops or targets intraday
+
+# ─── DATA DEPENDENCIES ──────────────────────────────────────────────────────
+# identical to candidate_1; see that spec or handoff_doc for full listing
+
+data_dependencies:
+  universe_file: 0_1_shared_master_universe/shared_symbol_lists/shared_master_symbol_list_us_common_stocks.csv
+  daily_price_cache: 1_0_strategy_research/research_data_cache/daily/
+  market_context_model: >
+    1_0_strategy_research/research_outputs/family_lineages/plan_next_day_day_trade/
+    phase_r1_market_context_model/market_context_model_plan_next_day_day_trade.csv
+
+# ─── NIGHTLY SIGNAL PACK OUTPUT FIELDS ──────────────────────────────────────
+# identical to candidate_1 field list; variant_id will differ
+
+nightly_output_fields:
+  - ticker
+  - signal_date
+  - next_trade_date
+  - variant_id
+  - entry_price
+  - stop_price
+  - target_price
+  - risk_dollar
+  - risk_pct
+  - cancel_condition_text
+  - same_day_exit_rule
+  - gap_direction
+  - gap_pct
+  - gap_size_band
+  - close_location_at_signal
+  - market_regime_at_signal
+  - signal_day_range_dollar
+  - position_sizing_note
+
+# ─── SOURCE REFERENCES ──────────────────────────────────────────────────────
+
+source_research:
+  phase_r6_script: >
+    1_0_strategy_research/research_source_code/strategy_families/plan_next_day_day_trade/
+    gap_directional_trap/research_run_gap_directional_trap_phase_r6_deployable_variant_validation.py
+  phase_r6_output_folder: >
+    1_0_strategy_research/research_outputs/family_lineages/plan_next_day_day_trade/
+    gap_directional_trap/phase_r6_deployable_variant_validation/
+  family_tree_master_doc: >
+    0_0_work_protocols/project_master_documents/
+    ai_trading_assistant__plan_next_day_day_trade__family_tree_master_doc.md

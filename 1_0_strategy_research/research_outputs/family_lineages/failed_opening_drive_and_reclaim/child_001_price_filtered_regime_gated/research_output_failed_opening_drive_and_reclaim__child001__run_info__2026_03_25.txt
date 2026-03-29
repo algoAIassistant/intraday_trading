@@ -1,0 +1,26 @@
+{
+  "run_date": "2026_03_25",
+  "phase": "child_001_locked_validation",
+  "family": "failed_opening_drive_and_reclaim",
+  "date_start": "2024-03-25",
+  "date_end": "2025-12-31",
+  "tickers_processed": 166,
+  "tickers_skipped": 4539,
+  "bearish_months_excluded": [
+    "2024-04",
+    "2024-09",
+    "2024-12",
+    "2025-01",
+    "2025-02",
+    "2025-03",
+    "2025-10"
+  ],
+  "total_sessions_in_output": 3234,
+  "condition_met_count": 873,
+  "condition_not_met_count": 2361,
+  "price_min": 5.0,
+  "price_max": 20.0,
+  "bearish_thresh": -0.1,
+  "large_drive_thresh": 2.0,
+  "early_reclaim_max": 60
+}

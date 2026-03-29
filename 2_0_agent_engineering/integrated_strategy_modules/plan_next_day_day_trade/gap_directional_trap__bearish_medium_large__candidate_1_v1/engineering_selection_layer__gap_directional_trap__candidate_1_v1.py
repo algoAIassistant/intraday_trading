@@ -1,0 +1,587 @@
+"""
+engineering_selection_layer__gap_directional_trap__candidate_1_v1.py
+
+track:    plan_next_day_day_trade
+family:   gap_directional_trap
+variant:  gap_directional_trap__bearish_medium_large__candidate_1_v1
+
+Purpose:
+  Operator-facing selection layer. Reads the raw nightly signal pack produced
+  by engineering_nightly_signal_scan__gap_directional_trap__candidate_1_v1.py,
+  applies hard operator filters (US common stock type, price 20-100, ADV20 >= $2M),
+  computes a transparent selection score, assigns operator price buckets, and
+  selects up to 3 best signals (one bucket leader per occupied bucket, best overall)
+  for manual TOS next-day execution.
+
+  This module does NOT modify the raw signal pack.
+  The raw signal pack remains the canonical source of truth.
+
+Inputs:
+  Raw signal pack:
+    engineering_runtime_outputs/plan_next_day_day_trade/
+      gap_directional_trap__candidate_1_v1/
+        signal_pack__gap_directional_trap__candidate_1_v1__YYYY_MM_DD.csv
+
+  Shared universe metadata (for type='CS' confirmation):
+    0_1_shared_master_universe/shared_metadata/
+      shared_master_metadata_us_common_stocks.csv
+
+  Daily price cache (for ADV and RVOL):
+    1_0_strategy_research/research_data_cache/daily/<ticker>.parquet
+
+Outputs:
+  engineering_runtime_outputs/plan_next_day_day_trade/
+    gap_directional_trap__candidate_1_v1/
+      ranked_signal_pack__gap_directional_trap__candidate_1_v1__YYYY_MM_DD.csv
+      selected_top_3__gap_directional_trap__candidate_1_v1__YYYY_MM_DD.csv
+      selection_summary__gap_directional_trap__candidate_1_v1__YYYY_MM_DD.md
+
+Usage:
+  python engineering_selection_layer__gap_directional_trap__candidate_1_v1.py
+  python engineering_selection_layer__gap_directional_trap__candidate_1_v1.py --signal-date 2026-03-24
+
+Do NOT add:
+  - Telegram delivery
+  - scheduling / cron integration
+  - broker API calls
+  - Alpaca
+  - live execution
+  - reactive intraday logic
+  - multi-family ranking logic (this module is scoped to candidate_1_v1 only)
+"""
+
+import argparse
+import math
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+# ── Repo root resolution ───────────────────────────────────────────────────────
+# File location: 2_0_agent_engineering/integrated_strategy_modules/
+#                plan_next_day_day_trade/gap_directional_trap__bearish_medium_large__candidate_1_v1/
+# parents[0] = gap_directional_trap__bearish_medium_large__candidate_1_v1/
+# parents[1] = plan_next_day_day_trade/
+# parents[2] = integrated_strategy_modules/
+# parents[3] = 2_0_agent_engineering/
+# parents[4] = ai_trading_assistant/ (REPO_ROOT)
+REPO_ROOT = Path(__file__).resolve().parents[4]
+
+# ── Data paths ─────────────────────────────────────────────────────────────────
+UNIVERSE_METADATA_FILE = (
+    REPO_ROOT
+    / "0_1_shared_master_universe"
+    / "shared_metadata"
+    / "shared_master_metadata_us_common_stocks.csv"
+)
+DAILY_CACHE_DIR = REPO_ROOT / "1_0_strategy_research" / "research_data_cache" / "daily"
+SIGNAL_PACK_DIR = (
+    REPO_ROOT
+    / "2_0_agent_engineering"
+    / "engineering_runtime_outputs"
+    / "plan_next_day_day_trade"
+    / "gap_directional_trap__candidate_1_v1"
+)
+OUTPUT_DIR = SIGNAL_PACK_DIR  # ranked outputs go to the same folder as the raw signal pack
+
+VARIANT_ID = "gap_directional_trap__bearish_medium_large__candidate_1_v1"
+
+# ── Hard filter thresholds ─────────────────────────────────────────────────────
+# All thresholds are explicit and documented. Change only with justification.
+
+# Operator-facing price range: below $20 is impractical for standard TOS brackets;
+# above $100 is outside the operator's intended sizing tier for this track.
+PRICE_MIN = 20.0
+PRICE_MAX = 100.0
+
+# ADV dollar minimum: $2,000,000 / day (20-session average of close * volume)
+# Rationale: minimum practical daily dollar volume for manual TOS day-trade bracket
+# orders on this track. Below this threshold, fill quality and MOC exit reliability
+# are operationally unreliable for the typical position size.
+ADV_DOLLAR_MIN = 2_000_000.0
+ADV_LOOKBACK_DAYS = 20  # sessions (not calendar days)
+
+# ── Operator price buckets ─────────────────────────────────────────────────────
+# Engineering-side operator selection only. Not a rewrite of the research family.
+# Label, inclusive_lower, exclusive_upper (upper bound = 100.0 is inclusive for last bucket).
+PRICE_BUCKETS = [
+    ("20_to_30",  20.0,  30.0),
+    ("30_to_50",  30.0,  50.0),
+    ("50_to_70",  50.0,  70.0),
+    ("70_to_100", 70.0, 100.001),  # 100.001 so that close == 100.0 falls in this bucket
+]
+
+# ── Score component weights ────────────────────────────────────────────────────
+# Weights sum to 1.0. Penalty is subtracted after the weighted raw score.
+W_ADV       = 0.30   # liquidity: higher ADV dollar = better operational quality
+W_CLOSE_LOC = 0.30   # signal quality: lower close_location = stronger failed drive
+W_RISK_PCT  = 0.25   # operational sanity: lower risk_pct = saner stop size for sizing
+W_RVOL      = 0.15   # relative activity: higher RVOL = more active signal day
+
+# ADV score: log10 scale anchored at ADV_DOLLAR_MIN (floor) and $100M (practical ceiling).
+# log10(2M) = 6.301, log10(100M) = 8.000 → range = 1.699
+_ADV_LOG_FLOOR = math.log10(ADV_DOLLAR_MIN)
+_ADV_LOG_CEIL  = math.log10(100_000_000.0)
+
+# Risk pct score: linear from 1.0 at risk_pct=0 to 0.0 at RISK_PCT_CEILING (10%).
+# Scores 0 for any risk_pct >= 10%; ~4.7% avg research risk scores ~0.53.
+RISK_PCT_CEILING = 0.10
+
+# RVOL score: linear from 0 to 1.0 at RVOL_CAP (2.0x). Caps there.
+RVOL_CAP = 2.0
+
+# ── Flag penalties ─────────────────────────────────────────────────────────────
+PENALTY_VERY_WIDE_STOP   = 0.15   # deducted when "very_wide_stop" in warning_flags
+PENALTY_STOP_BELOW_ZERO  = 0.25   # deducted when "stop_price_below_zero" in warning_flags
+
+# ── Top-N delivery cap ─────────────────────────────────────────────────────────
+MAX_DELIVERY = 3
+
+
+# ── Data loaders ───────────────────────────────────────────────────────────────
+
+def load_us_common_stock_set() -> set:
+    """
+    Return set of tickers confirmed as US common stock from the shared metadata file.
+    Criterion: type == 'CS' and locale == 'us'.
+    This is a defensive re-check on top of the symbol list used by the raw scan.
+    """
+    df = pd.read_csv(UNIVERSE_METADATA_FILE, dtype={"ticker": str})
+    confirmed = df[(df["type"] == "CS") & (df["locale"] == "us")]["ticker"]
+    return set(confirmed.str.strip().str.upper())
+
+
+def load_raw_signal_pack(signal_date: str) -> pd.DataFrame:
+    """Load the raw signal pack CSV for the given signal_date (YYYY-MM-DD)."""
+    date_str = signal_date.replace("-", "_")
+    filename = f"signal_pack__gap_directional_trap__candidate_1_v1__{date_str}.csv"
+    path = SIGNAL_PACK_DIR / filename
+    if not path.exists():
+        print(f"[ERROR] raw signal pack not found: {path}")
+        print(f"        Run engineering_nightly_signal_scan first for {signal_date}.")
+        sys.exit(1)
+    return pd.read_csv(path, dtype={"ticker": str})
+
+
+def load_daily_parquet(ticker: str) -> pd.DataFrame | None:
+    """Load daily parquet for ticker; normalize index to plain YYYY-MM-DD strings."""
+    path = DAILY_CACHE_DIR / f"{ticker}.parquet"
+    if not path.exists():
+        return None
+    try:
+        df = pd.read_parquet(path)
+        df.index = pd.to_datetime(df.index).strftime("%Y-%m-%d")
+        df = df[~df.index.duplicated(keep="last")].sort_index()
+        return df
+    except Exception:
+        return None
+
+
+def compute_adv_and_rvol(ticker: str, signal_date: str) -> tuple:
+    """
+    Compute ADV_LOOKBACK_DAYS-session average daily dollar volume (close * volume)
+    and signal-day relative volume (signal_day_dollar_vol / adv).
+
+    Uses sessions strictly prior to signal_date to avoid look-ahead.
+    Returns (adv_dollar: float, rvol: float) or (None, None) on failure.
+    """
+    df = load_daily_parquet(ticker)
+    if df is None:
+        return None, None
+
+    idx_list = list(df.index)
+    if signal_date not in idx_list:
+        return None, None
+
+    sig_pos = idx_list.index(signal_date)
+    if sig_pos == 0:
+        return None, None  # no prior sessions available
+
+    df_prior = df.iloc[:sig_pos].copy()
+    if df_prior.empty:
+        return None, None
+
+    df_prior["dollar_vol"] = df_prior["close"] * df_prior["volume"]
+    adv = df_prior["dollar_vol"].tail(ADV_LOOKBACK_DAYS).mean()
+
+    sig_row = df.loc[signal_date]
+    sig_dollar_vol = float(sig_row["close"]) * float(sig_row["volume"])
+    rvol = sig_dollar_vol / adv if adv and adv > 0 else None
+
+    return float(adv), rvol
+
+
+# ── Scoring functions ──────────────────────────────────────────────────────────
+
+def score_adv(adv: float) -> float:
+    """Log10-scale ADV score. Returns [0.0, 1.0]."""
+    if adv <= 0:
+        return 0.0
+    raw = (math.log10(adv) - _ADV_LOG_FLOOR) / (_ADV_LOG_CEIL - _ADV_LOG_FLOOR)
+    return max(0.0, min(1.0, raw))
+
+
+def score_close_location(cl: float) -> float:
+    """Lower close_location is better. Range [0, 0.20] after filter → score [0, 1]."""
+    return max(0.0, min(1.0, (0.20 - cl) / 0.20))
+
+
+def score_risk_pct(risk_pct: float) -> float:
+    """Lower risk_pct is better. 0 at RISK_PCT_CEILING; scales linearly below it."""
+    return max(0.0, 1.0 - (risk_pct / RISK_PCT_CEILING))
+
+
+def score_rvol(rvol: float) -> float:
+    """Higher RVOL is better; capped at RVOL_CAP. Returns [0.0, 1.0]."""
+    return min(rvol / RVOL_CAP, 1.0)
+
+
+def compute_flag_penalty(warning_flags_val) -> float:
+    """Sum penalty deductions for recognized warning flags."""
+    if pd.isna(warning_flags_val) or not str(warning_flags_val).strip():
+        return 0.0
+    flags = str(warning_flags_val)
+    penalty = 0.0
+    if "very_wide_stop" in flags:
+        penalty += PENALTY_VERY_WIDE_STOP
+    if "stop_price_below_zero" in flags:
+        penalty += PENALTY_STOP_BELOW_ZERO
+    return penalty
+
+
+def assign_price_bucket(close: float) -> str | None:
+    """Return operator price bucket label, or None if outside defined buckets."""
+    for label, low, high in PRICE_BUCKETS:
+        if low <= close < high:
+            return label
+    return None
+
+
+# ── Main selection logic ───────────────────────────────────────────────────────
+
+def run_selection(signal_date: str) -> None:
+    print(f"\n{'='*72}")
+    print(f"  gap_directional_trap  |  CANDIDATE_1_V1  |  selection layer")
+    print(f"  signal_date: {signal_date}")
+    print(f"{'='*72}\n")
+
+    # ── Load inputs ───────────────────────────────────────────────────────────
+    us_cs_tickers = load_us_common_stock_set()
+    raw_df = load_raw_signal_pack(signal_date)
+    total_raw = len(raw_df)
+    print(f"[load]   raw signal pack rows:                 {total_raw}")
+
+    # ── Prepare output dataframe with new columns ─────────────────────────────
+    out = raw_df.copy()
+    out["us_common_stock_confirmed"]  = False
+    out["price_bucket_operator"]      = None
+    out["avg_daily_dollar_volume"]    = None
+    out["relative_volume"]            = None
+    out["adv_dollar_score"]           = None
+    out["close_location_score"]       = None
+    out["risk_pct_score"]             = None
+    out["rvol_score"]                 = None
+    out["flag_penalty"]               = None
+    out["selection_score"]            = None
+    out["selection_rank_within_bucket"] = None
+    out["selection_rank_overall"]     = None
+    out["selected_for_delivery"]      = False
+    out["exclusion_reason"]           = ""
+
+    excluded_not_cs   = []   # failed: not US common stock type
+    excluded_price    = []   # failed: price outside 20-100
+    excluded_adv      = []   # failed: ADV below threshold (store (ticker, adv) tuples)
+    candidate_indices = []   # row indices that passed all hard filters
+
+    # ── Sequential hard filter pass ───────────────────────────────────────────
+    for idx, row in out.iterrows():
+        ticker = str(row["ticker"]).strip().upper()
+        close  = float(row["signal_day_close"])
+
+        # Filter 1: US common stock type confirmation
+        if ticker not in us_cs_tickers:
+            out.at[idx, "exclusion_reason"] = "not_us_common_stock"
+            excluded_not_cs.append(ticker)
+            continue
+        out.at[idx, "us_common_stock_confirmed"] = True
+
+        # Filter 2: operator price range 20-100
+        if not (PRICE_MIN <= close <= PRICE_MAX):
+            out.at[idx, "exclusion_reason"] = "price_outside_20_to_100"
+            excluded_price.append(ticker)
+            continue
+
+        # Filter 3: ADV dollar >= threshold
+        adv, rvol = compute_adv_and_rvol(ticker, signal_date)
+        if adv is None or adv < ADV_DOLLAR_MIN:
+            out.at[idx, "exclusion_reason"] = (
+                f"adv_below_{ADV_DOLLAR_MIN / 1_000_000:.0f}m_dollar_threshold"
+            )
+            out.at[idx, "avg_daily_dollar_volume"] = adv  # store for diagnostics
+            excluded_adv.append((ticker, adv))
+            continue
+
+        # Passed all filters
+        out.at[idx, "avg_daily_dollar_volume"] = adv
+        out.at[idx, "relative_volume"]         = rvol
+        candidate_indices.append(idx)
+
+    # ── Filter diagnostics ────────────────────────────────────────────────────
+    n_us_confirmed = int(out["us_common_stock_confirmed"].sum())
+    n_price_pass   = n_us_confirmed - len(excluded_price)
+    n_candidates   = len(candidate_indices)
+
+    print(f"[filter] excluded (not us common stock):       {len(excluded_not_cs)}")
+    print(f"[filter] confirmed us common stock:            {n_us_confirmed}")
+    print(f"[filter] excluded (price outside 20-100):      {len(excluded_price)}")
+    print(f"[filter] pass price filter:                    {n_price_pass}")
+    print(
+        f"[filter] excluded (adv < ${ADV_DOLLAR_MIN / 1_000_000:.0f}M / {ADV_LOOKBACK_DAYS}d):"
+        f"  {len(excluded_adv)}"
+    )
+    for ticker, adv in excluded_adv:
+        adv_str = f"${adv / 1_000_000:.2f}M" if adv is not None else "N/A"
+        print(f"           {ticker}: ADV20 = {adv_str}")
+    print(f"[filter] candidates for scoring:               {n_candidates}")
+    print()
+
+    if n_candidates == 0:
+        print("[result] no candidates survived filters — no ranked output generated\n")
+        return
+
+    # ── Score candidates ───────────────────────────────────────────────────────
+    for idx in candidate_indices:
+        row    = out.loc[idx]
+        adv    = float(row["avg_daily_dollar_volume"])
+        rvol   = float(row["relative_volume"]) if pd.notna(row["relative_volume"]) else 0.0
+        cl     = float(row["close_location"])
+        rp     = float(row["risk_pct"])
+        flags  = row["warning_flags"]
+
+        s_adv     = score_adv(adv)
+        s_cl      = score_close_location(cl)
+        s_risk    = score_risk_pct(rp)
+        s_rvol    = score_rvol(rvol)
+        penalty   = compute_flag_penalty(flags)
+
+        raw_score   = W_ADV * s_adv + W_CLOSE_LOC * s_cl + W_RISK_PCT * s_risk + W_RVOL * s_rvol
+        final_score = raw_score - penalty
+
+        out.at[idx, "adv_dollar_score"]    = round(s_adv,     4)
+        out.at[idx, "close_location_score"]= round(s_cl,      4)
+        out.at[idx, "risk_pct_score"]      = round(s_risk,    4)
+        out.at[idx, "rvol_score"]          = round(s_rvol,    4)
+        out.at[idx, "flag_penalty"]        = round(penalty,   4)
+        out.at[idx, "selection_score"]     = round(final_score, 4)
+        out.at[idx, "price_bucket_operator"] = assign_price_bucket(float(row["signal_day_close"]))
+
+    # ── Overall rank ───────────────────────────────────────────────────────────
+    cand_df = out.loc[candidate_indices].copy().sort_values("selection_score", ascending=False)
+    for rank, idx in enumerate(cand_df.index, start=1):
+        out.at[idx, "selection_rank_overall"] = rank
+
+    # ── Within-bucket rank ─────────────────────────────────────────────────────
+    for bucket_label, _, _ in PRICE_BUCKETS:
+        bucket_rows = cand_df[cand_df["price_bucket_operator"] == bucket_label]
+        for rank, idx in enumerate(bucket_rows.index, start=1):
+            out.at[idx, "selection_rank_within_bucket"] = rank
+
+    # ── Bucket leaders → top 3 ────────────────────────────────────────────────
+    # One leader per occupied bucket; sort leaders by score; take top MAX_DELIVERY.
+    bucket_leaders = []
+    for bucket_label, _, _ in PRICE_BUCKETS:
+        bucket_rows = cand_df[cand_df["price_bucket_operator"] == bucket_label]
+        if not bucket_rows.empty:
+            leader_idx = bucket_rows.index[0]  # first = highest score (sorted desc)
+            bucket_leaders.append((leader_idx, float(out.at[leader_idx, "selection_score"])))
+
+    bucket_leaders.sort(key=lambda x: x[1], reverse=True)
+    final_indices = [idx for idx, _ in bucket_leaders[:MAX_DELIVERY]]
+
+    for idx in final_indices:
+        out.at[idx, "selected_for_delivery"] = True
+
+    n_buckets_occupied = len(bucket_leaders)
+    n_selected         = len(final_indices)
+
+    print(f"[score]  candidates scored:                    {n_candidates}")
+    print(f"[score]  price buckets occupied:               {n_buckets_occupied}")
+    print(f"[score]  signals selected for delivery:        {n_selected}")
+    print()
+
+    # ── Print selected signals ─────────────────────────────────────────────────
+    selected_df = out.loc[final_indices].sort_values("selection_score", ascending=False)
+    hdr = f"  {'#':<3} {'Ticker':<7} {'Bucket':<13} {'Close':>7} {'Entry':>7} {'Stop':>7} {'Target':>8} {'Risk%':>6} {'RVOL':>5} {'ADV$M':>7} {'Score':>7}"
+    print("  SELECTED SIGNALS:")
+    print(hdr)
+    print(f"  {'-'*78}")
+    for rank, (_, row) in enumerate(selected_df.iterrows(), start=1):
+        adv_m  = float(row["avg_daily_dollar_volume"]) / 1_000_000 if pd.notna(row["avg_daily_dollar_volume"]) else 0.0
+        rvol_v = float(row["relative_volume"]) if pd.notna(row["relative_volume"]) else 0.0
+        print(
+            f"  {rank:<3} {row['ticker']:<7} {str(row['price_bucket_operator']):<13} "
+            f"{float(row['signal_day_close']):>7.2f} {float(row['entry_price']):>7.2f} "
+            f"{float(row['stop_price']):>7.2f} {float(row['target_price']):>8.2f} "
+            f"{float(row['risk_pct']) * 100:>5.1f}% {rvol_v:>5.2f} "
+            f"{adv_m:>6.1f}M {float(row['selection_score']):>7.4f}"
+        )
+    print()
+
+    # ── Write outputs ──────────────────────────────────────────────────────────
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    date_str = signal_date.replace("-", "_")
+
+    # 1. Ranked signal pack — all original rows plus new columns
+    ranked_path = (
+        OUTPUT_DIR
+        / f"ranked_signal_pack__gap_directional_trap__candidate_1_v1__{date_str}.csv"
+    )
+    out.to_csv(ranked_path, index=False)
+    print(f"[output] ranked_signal_pack  -> {ranked_path.name}")
+
+    # 2. Selected top 3 — operator-facing, limited columns
+    top3_cols = [
+        "ticker", "signal_date", "trade_date", "variant_id",
+        "price_bucket_operator",
+        "market_regime_label", "gap_size_band", "gap_pct",
+        "signal_day_close", "signal_day_high", "signal_day_low",
+        "signal_day_range_dollar",
+        "close_location",
+        "entry_price", "stop_price", "target_price",
+        "risk_dollar", "risk_pct",
+        "same_day_exit_rule", "cancel_condition_text",
+        "warning_flags",
+        "avg_daily_dollar_volume", "relative_volume",
+        "adv_dollar_score", "close_location_score", "risk_pct_score",
+        "rvol_score", "flag_penalty", "selection_score",
+        "selection_rank_within_bucket", "selection_rank_overall",
+        "selected_for_delivery",
+        "research_expectancy_r", "position_sizing_note",
+    ]
+    top3_df = (
+        out.loc[final_indices, top3_cols]
+        .sort_values("selection_score", ascending=False)
+        .reset_index(drop=True)
+    )
+    top3_path = (
+        OUTPUT_DIR
+        / f"selected_top_3__gap_directional_trap__candidate_1_v1__{date_str}.csv"
+    )
+    top3_df.to_csv(top3_path, index=False)
+    print(f"[output] selected_top_3      -> {top3_path.name}")
+
+    # 3. Selection summary markdown
+    summary_path = (
+        OUTPUT_DIR
+        / f"selection_summary__gap_directional_trap__candidate_1_v1__{date_str}.md"
+    )
+    trade_date_str = str(raw_df["trade_date"].iloc[0])
+    _write_summary(
+        summary_path, signal_date, trade_date_str, date_str,
+        total_raw, len(excluded_not_cs), n_us_confirmed,
+        len(excluded_price), n_price_pass, excluded_adv, n_candidates,
+        n_buckets_occupied, n_selected, selected_df,
+    )
+    print(f"[output] selection_summary   -> {summary_path.name}")
+    print()
+    print(f"[done]   selection complete  signal_date={signal_date}\n")
+
+
+def _write_summary(
+    path, signal_date, trade_date_str, date_str,
+    total_raw, n_not_cs, n_us_confirmed,
+    n_excl_price, n_price_pass, excluded_adv, n_candidates,
+    n_buckets_occupied, n_selected, selected_df,
+):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(f"# selection_summary__gap_directional_trap__candidate_1_v1__{date_str}\n\n")
+        f.write(f"signal_date:   {signal_date}\n")
+        f.write(f"trade_date:    {trade_date_str}\n")
+        f.write(f"variant_id:    {VARIANT_ID}\n\n")
+        f.write("---\n\n")
+
+        f.write("## Filter funnel\n\n")
+        f.write("| step | count |\n|------|-------|\n")
+        f.write(f"| raw signal pack | {total_raw} |\n")
+        f.write(f"| excluded (not us common stock) | {n_not_cs} |\n")
+        f.write(f"| confirmed us common stock | {n_us_confirmed} |\n")
+        f.write(f"| excluded (price outside 20-100) | {n_excl_price} |\n")
+        f.write(f"| pass price filter | {n_price_pass} |\n")
+        f.write(f"| excluded (ADV20 < ${ADV_DOLLAR_MIN / 1_000_000:.0f}M) | {len(excluded_adv)} |\n")
+        f.write(f"| candidates for scoring | {n_candidates} |\n")
+        f.write(f"| price buckets occupied | {n_buckets_occupied} |\n")
+        f.write(f"| selected for delivery | {n_selected} |\n\n")
+
+        if excluded_adv:
+            f.write("## Excluded by ADV filter\n\n")
+            f.write("| ticker | ADV_20_dollar |\n|--------|---------------|\n")
+            for ticker, adv in excluded_adv:
+                adv_str = f"${adv / 1_000_000:.2f}M" if adv is not None and not (isinstance(adv, float) and math.isnan(adv)) else "N/A"
+                f.write(f"| {ticker} | {adv_str} |\n")
+            f.write("\n")
+
+        f.write("## Score weights and formulas\n\n")
+        f.write("| component | weight | formula |\n|-----------|--------|--------|\n")
+        f.write(f"| adv_dollar_score | {W_ADV:.0%} | log10 scale; floor = ${ADV_DOLLAR_MIN / 1_000_000:.0f}M, ceil = $100M |\n")
+        f.write(f"| close_location_score | {W_CLOSE_LOC:.0%} | (0.20 - close_location) / 0.20 |\n")
+        f.write(f"| risk_pct_score | {W_RISK_PCT:.0%} | max(0, 1 - risk_pct / {RISK_PCT_CEILING:.0%}) |\n")
+        f.write(f"| rvol_score | {W_RVOL:.0%} | min(rvol_20 / {RVOL_CAP:.1f}, 1.0) |\n")
+        f.write(f"| flag_penalty | deducted | very_wide_stop: -{PENALTY_VERY_WIDE_STOP:.2f} | stop_below_zero: -{PENALTY_STOP_BELOW_ZERO:.2f} |\n")
+        f.write(f"\nADV formula: {ADV_LOOKBACK_DAYS}-session average of (close * volume) using sessions strictly prior to signal_date.\n")
+        f.write(f"RVOL: signal_day (close * volume) / ADV_{ADV_LOOKBACK_DAYS}.\n\n")
+
+        f.write("## Selected signals\n\n")
+        f.write("| # | ticker | bucket | close | entry | stop | target | risk_pct | rvol | adv_dollar | score |\n")
+        f.write("|---|--------|--------|-------|-------|------|--------|----------|------|------------|-------|\n")
+        for rank, (_, row) in enumerate(selected_df.iterrows(), start=1):
+            adv_m  = float(row["avg_daily_dollar_volume"]) / 1_000_000 if pd.notna(row["avg_daily_dollar_volume"]) else 0.0
+            rvol_v = float(row["relative_volume"]) if pd.notna(row["relative_volume"]) else 0.0
+            f.write(
+                f"| {rank} | {row['ticker']} | {row['price_bucket_operator']} | "
+                f"${float(row['signal_day_close']):.2f} | ${float(row['entry_price']):.2f} | "
+                f"${float(row['stop_price']):.2f} | ${float(row['target_price']):.2f} | "
+                f"{float(row['risk_pct']) * 100:.1f}% | {rvol_v:.2f} | "
+                f"${adv_m:.1f}M | {float(row['selection_score']):.4f} |\n"
+            )
+        f.write("\n---\n\n")
+        f.write(
+            f"Bucket leaders: one highest-scoring signal per occupied price bucket; "
+            f"top {MAX_DELIVERY} bucket leaders selected for delivery.\n"
+            f"Telegram delivery batch reads selected_top_3 CSV as its input.\n"
+        )
+
+
+# ── CLI entry point ────────────────────────────────────────────────────────────
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Selection layer for gap_directional_trap candidate_1_v1"
+    )
+    parser.add_argument(
+        "--signal-date",
+        type=str,
+        default=None,
+        help="Signal date YYYY-MM-DD. Defaults to auto-detect from latest raw signal pack.",
+    )
+    args = parser.parse_args()
+
+    if args.signal_date:
+        signal_date = args.signal_date
+    else:
+        packs = sorted(
+            SIGNAL_PACK_DIR.glob("signal_pack__gap_directional_trap__candidate_1_v1__*.csv")
+        )
+        if not packs:
+            print("[ERROR] no raw signal pack found — run the nightly scan first")
+            sys.exit(1)
+        latest = packs[-1]
+        # Filename pattern: signal_pack__gap_directional_trap__candidate_1_v1__YYYY_MM_DD.csv
+        date_part = latest.stem.split("__")[-1]  # YYYY_MM_DD
+        signal_date = date_part.replace("_", "-")
+        print(f"[auto]   using latest signal pack: {latest.name}")
+
+    run_selection(signal_date)
+
+
+if __name__ == "__main__":
+    main()

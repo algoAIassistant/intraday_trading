@@ -1,0 +1,160 @@
+Phase_r2 Structural Validation Report
+Family: failed_opening_drive_and_reclaim
+Branch: phase_r1 parent_002 (large drive_down >= 2% + reclaim open)
+Date: 2026-03-25
+Data window: 2025-07-01 to 2025-12-31 (6 months, 259 tickers processed)
+
+=============================================================================
+SUMMARY VERDICT: NARROWED ALIVE
+=============================================================================
+
+The overall t=2.33 signal from phase_r1 does not survive broad structural
+validation. It is concentrated in a specific price tier AND is strongly
+regime-dependent. However, the narrowed version (price $10-20, non-bearish
+market months) shows robust signal (t=4.11) with reasonable breadth.
+
+Parent_002 as currently defined: NOT advancing to phase_r3 in current form.
+Narrow version (child_001): ALIVE — merits a targeted child branch.
+
+=============================================================================
+1. TIME STABILITY
+=============================================================================
+
+Monthly breakdown (reclaimed sessions, post_failure_to_close_pct):
+
+  Month         N    Mean%     Win       t
+  2025-07     123   +0.739   0.610    +2.73    [FLAT market]
+  2025-08     152   +1.006   0.526    +3.18    [BULLISH market]
+  2025-09     103   -0.109   0.466    -0.29    [BULLISH market — September drag]
+  2025-10     122   -1.028   0.336    -3.27    [BEARISH market — full inversion]
+  2025-11      83   +0.342   0.602    +1.02    [FLAT market]
+  2025-12     107   +0.782   0.523    +2.28    [FLAT market]
+
+Time stability verdict: FRAGILE in current form.
+  October 2025 inverts the signal strongly (t=-3.27). October is the only
+  clearly bearish month in the dataset (universe avg open_to_close = -0.244%).
+  The inversion is universal across all price tiers in October — it is not
+  ticker-specific, it is a market-regime effect.
+
+Regime split:
+  FLAT months (Jul, Nov, Dec):  n=313  mean=+0.649%  win=57.8%  t=+3.58
+  BULLISH months (Aug, Sep):    n=255  mean=+0.556%  win=50.2%  t=+2.27
+  BEARISH month (Oct only):     n=122  mean=-1.028%  win=33.6%  t=-3.27
+
+DATA LIMITATION: Only ONE bearish month in dataset. The bearish regime
+characterization is based entirely on October 2025. This is insufficient
+to validate a regime filter robustly. A longer data window is required.
+
+=============================================================================
+2. CONCENTRATION RISK
+=============================================================================
+
+Full dataset (690 reclaimed sessions):
+  Top 5 tickers:  44.5% of total return
+  Top 10 tickers: 74.0% of total return
+  Tickers with positive total return: 82/154 (53%)
+  Top contributors: RUN, RCAT, ONDS, RIOT, SOUN, TLRY, TE, CRWV, IREN, UEC
+    (all high-volatility, speculative names — mostly crypto/EV/biotech)
+
+Ex-October (non-bearish months only, 568 sessions):
+  Top 5 tickers:  32.4% of total return
+  Top 10 tickers: 53.7% of total return
+  Tickers with positive total return: 91/146 (62%)
+  Ticker win rate distribution:
+    >= 50% win rate: 63% of tickers with events
+    >= 60% win rate: 44% of tickers with events
+
+Concentration verdict: HIGH in full dataset, MODERATE in non-bearish window.
+  The extreme concentration (top10=74%) is largely an October artifact — the
+  speculative names that "reclaim" during bearish months suffer the most,
+  pulling the non-speculative names with them.
+  In non-bearish months, breadth improves meaningfully (62% of tickers positive,
+  top10 = 53.7%). Still concentrated, but not extreme.
+
+=============================================================================
+3. PRICE TIER / LIQUIDITY TIER BREAKDOWN
+=============================================================================
+
+Full dataset (all months):
+  <$10 stocks:     n=219  mean=+0.345%  win=51.6%  t=+1.34
+  $10-20 stocks:   n=216  mean=+0.824%  win=56.5%  t=+3.02  <- SIGNAL
+  $20-40 stocks:   n=129  mean=-0.173%  win=43.4%  t=-0.73   (negative)
+  $40-100 stocks:  n=110  mean=-0.129%  win=48.2%  t=-0.47   (near-zero)
+
+Ex-October (non-bearish months):
+  <$10 stocks:     n=195  mean=+0.500%  win=53.3%  t=+1.81
+  $10-20 stocks:   n=170  mean=+1.256%  win=61.2%  t=+4.11  <- STRONG SIGNAL
+  $20-40 stocks:   n=102  mean=+0.049%  win=48.0%  t=+0.19   (effectively zero)
+  $40-100 stocks:  n=  88  mean=+0.211%  win=52.3%  t=+0.79   (weak)
+
+Volume tier (all months):
+  2-5M avg vol:   n= 62  mean=-0.518%  win=33.9%  (negative — lowest tier)
+  5-10M avg vol:  n=244  mean=+0.296%  win=48.0%  t=+1.46
+  10-20M avg vol: n=165  mean=+0.559%  win=53.9%  t=+1.71
+  20-50M avg vol: n=172  mean=+0.444%  win=55.8%  t=+1.66
+  50M+ avg vol:   n= 47  mean=+0.222%  win=57.4%  t=+0.40   (high vol, wide var)
+
+Price tier verdict: STRONG STRUCTURAL SPECIFICITY.
+  The signal lives almost exclusively in $10-20 priced stocks.
+  Higher-priced stocks ($20-100) show negative or near-zero returns.
+  This is consistent across both full dataset and ex-October cuts.
+  The $10-20 range maps to mid-tier liquidity names — not micro-caps, not
+  large-caps. The condition appears to require enough intraday range for the
+  "reclaim" to have meaning, but not so much capital that reclaims are slow.
+
+=============================================================================
+4. BIGGEST RISKS TO SIGNAL VALIDITY
+=============================================================================
+
+1. REGIME SENSITIVITY (primary risk)
+   One bearish month completely inverts the signal (t=-3.27 in October).
+   Without a reliable real-time regime indicator (SPY/QQQ not yet in cache),
+   the signal cannot be safely traded in its current form. A regime filter
+   is required but cannot be validated on 1 bearish month.
+
+2. PRICE TIER SPECIFICITY (secondary risk — also an opportunity)
+   Signal only works for $10-20 stocks. This narrows the universe significantly
+   and must be explicitly encoded in the condition definition for phase_r3.
+
+3. LIMITED DATA WINDOW (structural constraint)
+   Only 6 months of data. Only 1 bearish month. Cannot validate cross-year
+   stability or characterize regime transitions. This is an API limitation.
+   Workaround: rebuild cache with 2024-03-25 to 2025-06-30 window to add
+   ~15 more months of data. This would provide at minimum 1-2 more bearish
+   periods for regime filter validation.
+
+4. SPECULATIVE NAME CONCENTRATION
+   Even in non-bearish months, top 10 = 53.7% of return. The best-performing
+   tickers are crypto miners (MARA, RIOT, CLSK), EV plays (RIVN, LCID), and
+   other speculative names. These have limited capacity for actual allocation.
+
+=============================================================================
+5. CONCLUSION AND FORWARD PATH
+=============================================================================
+
+Phase_r2 verdict: PARENT_002 NARROWED — does not advance as currently defined.
+
+The signal is not structurally broad across all price tiers and all regimes.
+The t=2.33 from phase_r1 is real but conceals two layers of instability:
+  (a) regime sensitivity — collapses in bearish markets
+  (b) price-tier specificity — only $10-20 range stocks
+
+RECOMMENDED FORWARD PATH:
+
+Spawn child_001 from parent_002 with the following condition:
+  1. drive_down with abs magnitude >= 2.0%
+  2. Stock session open in $5-20 range (tightened price filter)
+  3. Price reclaims session_open post-drive
+  4. Market regime filter: non-bearish (to be defined using SPY or universe-avg)
+
+Prerequisite before child_001 can advance to phase_r3:
+  (a) Build SPY daily cache (or extend intraday cache to 2024-03-25 to cover more regimes)
+  (b) Run the extended window analysis to confirm regime sensitivity is not a single-month fluke
+  (c) Verify at least 2-3 bearish months exist in the expanded dataset
+
+Without (a)+(b), the regime filter cannot be validated and child_001 cannot
+safely be formalized into a phase_r3 strategy.
+
+NOTE: The large drive_up failure signal (t=-3.30 short direction from parent_001)
+is an unrelated interesting finding that could merit a separate family branch
+if the user wants to pursue short-side intraday reclaim strategies.

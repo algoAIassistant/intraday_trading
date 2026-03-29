@@ -1,0 +1,89 @@
+﻿== 1_0_strategy_research ==
+
+
+Name          : research_configs
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_configs
+PSIsContainer : True
+
+Name          : research_data_cache
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_data_cache
+PSIsContainer : True
+
+Name          : research_documents
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_documents
+PSIsContainer : True
+
+Name          : research_outputs
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_outputs
+PSIsContainer : True
+
+Name          : research_registry
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_registry
+PSIsContainer : True
+
+Name          : research_source_code
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code
+PSIsContainer : True
+
+
+
+
+== research_source_code ==
+
+
+Name          : baseline_market_studies
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\baseline_market_studies
+PSIsContainer : True
+
+Name          : cache_builders
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\cache_builders
+PSIsContainer : True
+
+Name          : conditional_behavior
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\conditional_behavior
+PSIsContainer : True
+
+Name          : data_providers
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\data_providers
+PSIsContainer : True
+
+Name          : reporting
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\reporting
+PSIsContainer : True
+
+Name          : robust_validation
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\robust_validation
+PSIsContainer : True
+
+Name          : strategy_families
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\strategy_families
+PSIsContainer : True
+
+Name          : strategy_formalization
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\strategy_formalization
+PSIsContainer : True
+
+Name          : structural_pattern_studies
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\structural_pattern_studies
+PSIsContainer : True
+
+Name          : universe_builder
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\universe_builder
+PSIsContainer : True
+
+
+
+
+== strategy_families\intraday_same_day ==
+
+
+Name          : failed_opening_drive_and_reclaim
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\strategy_families\intraday_same_day\failed_opening_drive_and_reclaim
+PSIsContainer : True
+
+Name          : .gitkeep
+FullName      : B:\git_hub\claude_code\ai_trading_assistant\1_0_strategy_research\research_source_code\strategy_families\intraday_same_day\.gitkeep
+PSIsContainer : False
+
+
+

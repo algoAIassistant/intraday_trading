@@ -1,0 +1,36 @@
+shared_master_build_validation_report
+run_date          : 2026_03_25
+source            : Massive.com (type=CS, market=stocks, active=True)
+accepted_exchanges: ['XASE', 'XNAS', 'XNYS']
+
+--- Counts ---
+raw_fetched       : 5268
+hard_rejected     : 562
+waitlisted_pass1  : 0
+retry_promoted    : 0
+retry_still_failed: 0
+final_clean       : 4706
+
+--- Exchange breakdown (clean universe) ---
+  XASE    : 204
+  XNAS    : 2979
+  XNYS    : 1523
+
+--- Filter logic applied ---
+  type == CS
+  market == stocks
+  currency_name == usd
+  primary_exchange in ['XASE', 'XNAS', 'XNYS']
+  ticker: 1-5 uppercase letters (with optional .X or .XX suffix)
+  ticker: no warrant/right/unit/note suffix (W WS WI R RT U Z)
+  name: non-empty
+
+--- Retry logic ---
+  Soft-fail tickers (missing name or exchange) placed on waitlist.
+  One retry pass: individual get_ticker_details() call per waitlisted ticker.
+  Anything still failing after retry remains in retry_waitlist output.
+
+--- Output files ---
+  symbol_list : B:\git_hub\claude_code\ai_trading_assistant\0_1_shared_master_universe\shared_symbol_lists\shared_master_symbol_list_us_common_stocks__2026_03_25.csv
+  metadata    : B:\git_hub\claude_code\ai_trading_assistant\0_1_shared_master_universe\shared_metadata\shared_master_metadata_us_common_stocks__2026_03_25.csv
+  waitlist    : B:\git_hub\claude_code\ai_trading_assistant\0_1_shared_master_universe\shared_validation_reports\shared_master_retry_waitlist__2026_03_25.csv

@@ -1,0 +1,20 @@
+{
+  "run_date": "2026_03_25",
+  "phase": "phase_r1_failed_drive_condition",
+  "family": "failed_opening_drive_and_reclaim",
+  "condition": "drive_reverses_through_session_open",
+  "cache_only": true,
+  "date_start": "2025-07-01",
+  "date_end": "2025-12-31",
+  "drive_minutes": 30,
+  "drive_flat_thresh_pct": 0.1,
+  "tickers_requested": 300,
+  "tickers_processed": 294,
+  "tickers_skipped": 6,
+  "sessions_attempted": 36936,
+  "sessions_skipped": 3035,
+  "sessions_in_output": 33901,
+  "sessions_drive_failed": 18123,
+  "overall_failure_rate": 0.5346,
+  "output_dir": "B:\\git_hub\\claude_code\\ai_trading_assistant\\1_0_strategy_research\\research_outputs\\family_lineages\\failed_opening_drive_and_reclaim\\phase_r1_failed_drive_condition"
+}

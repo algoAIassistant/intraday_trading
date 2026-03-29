@@ -1,0 +1,6 @@
+variant,slip_id,slippage_pct,n_total,n_traded,trigger_rate_pct,n_win,n_loss,n_time_exit,win_rate_pct,loss_rate_pct,time_exit_rate_pct,expectancy_r,profit_factor,max_loss_r,pct_of_base_expectancy
+candidate_1_v2,slip_000pct,0.0,5760,3589,62.31,253,1,3335,7.0493,0.0279,92.9228,0.773,71.7,-1.0,100.0
+candidate_1_v2,slip_005pct,0.0005,5760,3564,61.88,244,1,3319,6.8462,0.0281,93.1257,0.7673,69.95,-1.0,99.3
+candidate_1_v2,slip_010pct,0.001,5760,3536,61.39,241,1,3294,6.8156,0.0283,93.1561,0.7621,67.31,-1.0,98.6
+candidate_1_v2,slip_025pct,0.0025,5760,3445,59.81,226,1,3218,6.5602,0.029,93.4107,0.7489,65.75,-1.0,96.9
+candidate_1_v1,slip_000pct,0.0,5760,5063,87.9,369,398,4296,7.2882,7.861,84.8509,0.4256,3.79,-1.0,

@@ -1,0 +1,181 @@
+# variant_spec__gap_directional_trap__candidate_1_v1
+# track:  plan_next_day_day_trade
+# phase:  phase_r8__research_to_engineering_handoff
+# date:   2026-03-27
+
+# This is the machine-friendly specification for the preferred production variant.
+# Read handoff_doc__gap_directional_trap__phase_r8__2026_03_27.md for full context.
+
+variant_id: gap_directional_trap__bearish_medium_large__candidate_1_v1
+family_name: gap_directional_trap
+track: plan_next_day_day_trade
+production_priority: 1
+research_status: deployable_variant_phase_r6_validated_2026_03_27
+execution_model: half_automation_half_manual_thinkorswim_conditional_orders
+
+# ─── SIGNAL SLICE FILTER ────────────────────────────────────────────────────
+
+slice:
+  universe_source: 0_1_shared_master_universe/shared_symbol_lists/shared_master_symbol_list_us_common_stocks.csv
+  conditions:
+    gap_direction:
+      field: gap_direction
+      operator: "=="
+      value: gap_up
+    close_location:
+      field: signal_day_close_location
+      formula: (signal_day_close - signal_day_low) / (signal_day_high - signal_day_low)
+      operator: "<"
+      threshold: 0.20
+    market_regime:
+      field: market_regime_label
+      operator: "=="
+      value: bearish
+      source: phase_r1_market_context_model/market_context_model_plan_next_day_day_trade.csv
+      join_key: signal_date
+    gap_size_band:
+      field: gap_size_band
+      operator: "in"
+      values: [medium, large]
+      derivation:
+        small:  abs(gap_pct) < 0.015
+        medium: 0.015 <= abs(gap_pct) < 0.030
+        large:  abs(gap_pct) >= 0.030
+
+# ─── ORDER LOGIC ────────────────────────────────────────────────────────────
+
+entry:
+  type: buy_stop
+  order_style: day_order
+  formula: entry_price = signal_day_close * 1.002
+  buffer_pct: 0.002
+
+stop:
+  type: structure_based_range_proxy
+  formula: |
+    risk_dollar = 0.75 * signal_day_range_dollar
+    stop_price  = fill_price - risk_dollar
+  range_proxy_factor: 0.75
+  approximate_risk_pct: 0.047  # ~4.7% empirical average
+  note: wide disaster stop; expected to fire ~13-15% of triggered trades
+
+target:
+  type: fixed_r_multiple
+  r_multiple: 2.0
+  formula: |
+    risk_dollar  = fill_price - stop_price
+    target_price = fill_price + (2.0 * risk_dollar)
+  note: target fires ~4-5% of triggered trades; MOC is primary exit
+
+cancel:
+  type: none
+  note: no mandatory cancel condition; buy stop self-expires if not triggered
+
+exit:
+  type: market_on_close
+  formula: MOC order for same session as entry
+  default_resolution_rate_pct: 82.1
+  note: submit MOC order when placing bracket; cancel if stop or target already fired
+
+# ─── PERFORMANCE (PHASE_R6 VALIDATED) ───────────────────────────────────────
+
+performance:
+  slice_label: gap_up_cl_low_020__bearish__medium_plus_large
+  n_valid_events: 8772
+  expectancy_r: 0.244
+  win_rate_pct: 4.5
+  loss_rate_pct: 13.4
+  time_exit_rate_pct: 82.1
+  average_risk_pct: 5.6
+  slippage_at_025pct_worst: 0.133
+  slippage_verdict: ROBUST
+  concentration_verdict: EXCEPTIONAL_BREADTH
+  unique_tickers: 1673
+  top5_pct_of_total_pnl: 3.3
+
+yearly_expectancy:
+  "2021": +0.403
+  "2022": -0.156  # structural bear market — accept as regime risk
+  "2023": +0.018
+  "2024": +0.166
+  "2025": +0.428
+  "2026": -0.053  # partial year only
+
+yearly_verdict: "4/6 positive; 2022 structural; 2026 partial"
+
+# ─── RISK NOTES ─────────────────────────────────────────────────────────────
+
+risk_notes:
+  position_sizing_warning: |
+    Average risk distance is ~4.7%. At 1% account risk per trade,
+    share count = account_risk_dollar / risk_dollar.
+    With a $100k account and 1% risk ($1000), shares ≈ 1000 / (entry * 0.047).
+    This is significantly fewer shares than a 1% stop trade. Confirm sizing.
+  2022_structural_risk: |
+    Sustained directional bear market suppresses the gap-trap mechanism.
+    Vol gate does not fix this. Accept as structural regime risk.
+    Monitor for 2022-like conditions and reduce exposure manually.
+  slippage_note: |
+    +0.133R expectancy retained at +0.25% worst-case slippage (87% of baseline).
+    Robust to realistic execution perturbation.
+  concentration_note: |
+    Negligible concentration risk. Top-5 tickers = 3.3% of total pnl.
+    Removing top-20 contributors still produces +0.140R expectancy.
+
+# ─── TOS WORKFLOW SUMMARY ───────────────────────────────────────────────────
+
+tos_workflow:
+  step_1: place BUY STOP at entry_price (day order, next session)
+  step_2: attach STOP bracket at stop_price (to fill)
+  step_3: attach LIMIT bracket at target_price (OCO with stop)
+  step_4: place separate MOC order for same session
+  constraint: do not adjust stops or targets intraday
+
+# ─── DATA DEPENDENCIES ──────────────────────────────────────────────────────
+
+data_dependencies:
+  universe_file: 0_1_shared_master_universe/shared_symbol_lists/shared_master_symbol_list_us_common_stocks.csv
+  daily_price_cache: 1_0_strategy_research/research_data_cache/daily/
+  market_context_model: >
+    1_0_strategy_research/research_outputs/family_lineages/plan_next_day_day_trade/
+    phase_r1_market_context_model/market_context_model_plan_next_day_day_trade.csv
+  gap_size_thresholds: hardcoded (see slice.conditions.gap_size_band above)
+
+# ─── NIGHTLY SIGNAL PACK OUTPUT FIELDS ──────────────────────────────────────
+
+nightly_output_fields:
+  - ticker
+  - signal_date
+  - next_trade_date
+  - variant_id
+  - entry_price
+  - stop_price
+  - target_price
+  - risk_dollar
+  - risk_pct
+  - cancel_condition_text
+  - same_day_exit_rule
+  - gap_direction
+  - gap_pct
+  - gap_size_band
+  - close_location_at_signal
+  - market_regime_at_signal
+  - signal_day_range_dollar
+  - position_sizing_note
+
+# ─── SOURCE REFERENCES ──────────────────────────────────────────────────────
+
+source_research:
+  phase_r6_script: >
+    1_0_strategy_research/research_source_code/strategy_families/plan_next_day_day_trade/
+    gap_directional_trap/research_run_gap_directional_trap_phase_r6_deployable_variant_validation.py
+  phase_r6_output_folder: >
+    1_0_strategy_research/research_outputs/family_lineages/plan_next_day_day_trade/
+    gap_directional_trap/phase_r6_deployable_variant_validation/
+  phase_r4_event_rows: >
+    1_0_strategy_research/research_outputs/family_lineages/plan_next_day_day_trade/
+    gap_directional_trap/phase_r4_structural_validation/
+    grandchild_event_rows__gap_directional_trap__phase_r4__2026_03_27.csv
+  family_tree_master_doc: >
+    0_0_work_protocols/project_master_documents/
+    ai_trading_assistant__plan_next_day_day_trade__family_tree_master_doc.md

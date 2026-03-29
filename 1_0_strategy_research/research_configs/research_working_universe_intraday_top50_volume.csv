@@ -1,0 +1,51 @@
+ticker,name,primary_exchange,latest_close,avg_volume
+AAL,American Airlines Group Inc.,XNAS,10.71,65310292
+AG,FIRST MAJESTIC SILVER CORP,XNYS,20.1,22295892
+AGNC,AGNC Investment Corp. Common Stock,XNAS,9.94,23766134
+APLD,Applied Digital Corporation Common Stock,XNAS,26.79,34910335
+BAC,Bank of America Corporation,XNYS,48.14,40560384
+CCL,Carnival Corporation,XNYS,25.47,22813529
+CDE,"Coeur Mining, Inc.",XNYS,18.31,18909157
+CLF,Cleveland-Cliffs Inc.,XNYS,8.31,24548848
+CLSK,CLEANSPARK INC,XNAS,9.58,27751698
+CMCSA,Comcast Corp,XNAS,29.22,28447932
+CMG,"Chipotle Mexican Grill, Inc.",XNYS,32.76,18018439
+CRWV,"CoreWeave, Inc. Class A Common Stock",XNAS,83.02,25078398
+CSCO,"Cisco Systems, Inc. Common Stock (DE)",XNAS,80.86,21738027
+F,Ford Motor Company,XNYS,11.84,85065390
+HBAN,Huntington Bancshares Inc,XNAS,15.48,29521070
+HIMS,"Hims & Hers Health, Inc.",XNYS,21.34,32907673
+HL,Hecla Mining Company,XNYS,17.93,23168956
+HOOD,"Robinhood Markets, Inc. Class A Common Stock",XNAS,69.08,37110649
+HPE,Hewlett Packard Enterprise Company,XNYS,23.9,22515152
+INTC,Intel Corp,XNAS,44.06,100927388
+IONQ,"IonQ, Inc.",XNYS,32.7,23106347
+IREN,IREN Limited Ordinary Shares,XNAS,41.12,31418524
+JOBY,"Joby Aviation, Inc.",XNYS,8.99,29110221
+KEY,KeyCorp,XNYS,19.82,19444423
+KVUE,Kenvue Inc.,XNYS,17.55,31015054
+MARA,"MARA Holdings, Inc. Common Stock",XNAS,8.25,47501657
+MRVL,"Marvell Technology, Inc. Common Stock",XNAS,92.36,19195974
+NFLX,NetFlix Inc,XNAS,90.92,41356209
+NVTS,Navitas Semiconductor Corporation Common Stock,XNAS,9.28,29637207
+ONDS,Ondas Inc. Common Stock,XNAS,10.68,56674704
+OPEN,Opendoor Technologies Inc Common Stock,XNAS,5.18,149648449
+PATH,"UiPath, Inc.",XNYS,11.07,21262967
+PCG,PG&E Corporation,XNYS,17.34,23194333
+PFE,Pfizer Inc.,XNYS,26.96,51297928
+QBTS,D-Wave Quantum Inc.,XNYS,15.93,47453483
+QS,QuantumScape Corporation Class A Common Stock,XNAS,6.81,27747324
+QUBT,Quantum Computing Inc. Common,XNAS,7.45,24054872
+RGTI,"Rigetti Computing, Inc. Common Stock",XNAS,15.6,50428452
+RIG,Transocean LTD.,XNYS,6.63,41419021
+RIOT,"Riot Platforms, Inc. Common Stock",XNAS,14.33,28936020
+RIVN,"Rivian Automotive, Inc. Class A Common Stock",XNAS,16.1,38719874
+RKLB,Rocket Lab Corporation Common Stock,XNAS,66.07,21714584
+RKT,"Rocket Companies, Inc.",XNYS,14.17,26010443
+SMCI,"Super Micro Computer, Inc. Common Stock",XNAS,22.23,36716263
+SOFI,"SoFi Technologies, Inc. Common Stock",XNAS,16.7,67064017
+SOUN,"SoundHound AI, Inc. Class A Common Stock",XNAS,6.36,38110491
+T,AT&T Inc.,XNYS,28.87,40464582
+WBD,"Warner Bros. Discovery, Inc. Series A Common Stock",XNAS,27.28,47660406
+WOLF,"Wolfspeed, Inc.",XNYS,16.67,25796862
+WULF,TeraWulf Inc. Common Stock,XNAS,16.22,40842772

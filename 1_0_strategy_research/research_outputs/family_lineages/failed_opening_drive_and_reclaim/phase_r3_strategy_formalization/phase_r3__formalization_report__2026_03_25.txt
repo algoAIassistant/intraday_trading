@@ -1,0 +1,89 @@
+============================================================================
+PHASE_R3 STRATEGY FORMALIZATION — VARIANT COMPARISON
+Family : failed_opening_drive_and_reclaim
+Branch : child_001 (price $5-20, drive_down>=2%, reclaim, non-bearish)
+Date   : 2026_03_25
+Events : 873 processed  (0 failed — no cache)
+============================================================================
+
+ID       N   Mean%   Win%      t    p10%    p90%  Stop%   Tgt%  E[pnl]
+----------------------------------------------------------------------------
+  V1     873  +0.482  53.0%  +3.71  -3.368  +4.226   0.0%   0.0%  +0.482 <<< WINNER
+  V2     873  +0.062   4.3%  +1.13  -0.383  +0.000  95.1%   0.0%  +0.062
+  V3     873  +0.171  37.9%  +1.85  -1.500  +3.175  48.7%   0.0%  +0.171
+  V4     166  +1.219  61.5%  +2.87  -4.412  +7.534   0.0%   0.0%  +1.219
+  V5     166  +0.144   5.4%  +0.87  -0.556  +0.000  94.6%   0.0%  +0.144
+  V6     873  +0.012   7.8%  +0.60  -0.360  +0.000  91.6%   6.5%  +0.012
+  V7     873  +0.117  48.0%  +2.24  -1.500  +2.000  40.3%  33.7%  +0.117
+
+Label key:
+  V1: Any reclaim | No stop | Hold to close
+  V2: Any reclaim | Structural stop (session_open) | Hold to close
+  V3: Any reclaim | Hard stop -1.5% | Hold to close
+  V4: Early only (<=60 bars) | No stop | Hold to close
+  V5: Early only (<=60 bars) | Structural stop | Hold to close
+  V6: Any reclaim | Structural stop | +2.0% target | Hold remainder
+  V7: Any reclaim | Hard stop -1.5% | +2.0% target | Hold remainder
+
+============================================================================
+WINNER: V1 — Any reclaim | No stop | Hold to close
+Selection basis : Best by t-stat (t>=2.0, mean>0)
+
+  n          : 873
+  mean       : +0.482%
+  win rate   : 53.0%
+  t-stat     : +3.71
+  expectancy : +0.482% per trade
+  p10 / p90  : -3.368% / +4.226%
+
+CONCENTRATION (winner):
+  Top-5 tickers:  28.4% of positive return
+  Top-10 tickers: 44.9% of positive return
+  Tickers positive: 62.5% of 128 tickers with events
+  Top contributors: RUN, ENVX, REPL, QUBT, IREN
+
+============================================================================
+FORMAL CANDIDATE SPECIFICATION (phase_r3 survivor)
+============================================================================
+
+Strategy family : failed_opening_drive_and_reclaim
+Branch          : child_001__price_filtered_regime_gated
+Formalized rule : V1
+
+CONDITION (inherited from child_001 locked validation):
+  1. Market month is non-bearish (universe-avg OTC > -0.10%)
+  2. Session open price in $5-20 range
+  3. First 30-minute drive is downward with abs magnitude >= 2.0%
+  4. Any post-drive bar closes >= session_open (price reclaims open)
+
+ENTRY:
+  Buy at close of the first reclaim bar (any bar from bar 31 onward)
+
+STOP:
+  No stop applied — hold position through intraday noise
+
+PROFIT TARGET:
+  No fixed target — hold to close unless stopped
+
+TIME-BASED EXIT:
+  Hold to session close (15:59 ET) unless stop or target is hit first
+  Note: test a 15:00 ET hard exit in phase_r4 slippage sensitivity
+
+DIRECTION: Long only
+HOLDING PERIOD: Intraday — flat by close (same-day exit enforced)
+
+INITIAL EXPECTANCY ESTIMATE (in-sample, 21-month window):
+  Gross mean return per trade : +0.482%
+  Win rate                    : 53.0%
+  Gross expectancy            : +0.482% per trade
+  Note: no slippage, commission, or spread applied.
+  Phase_r4 stress test must apply 5bp–15bp slippage sensitivity.
+
+REGIME FILTER (carried from child_001):
+  Non-bearish months only (universe-avg OTC > -0.10%)
+  Regime computed from universe of liquid common stocks monthly average
+  7 bearish months validated in 2024-2025 dataset (signal does not invert in non-bearish)
+
+============================================================================
+READY FOR PHASE_R4: YES — advancing
+============================================================================

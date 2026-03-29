@@ -1,0 +1,5 @@
+slip_id,slippage_pct,n_total,n_traded,trigger_rate_pct,n_win,n_loss,win_rate_pct,loss_rate_pct,time_exit_rate_pct,expectancy_r,pct_of_base_expectancy,profit_factor
+slip_000pct,0.0,5760,3589,62.31,253,1,7.0493,0.0279,92.9228,0.773,100.0,71.7
+slip_005pct,0.0005,5760,3564,61.88,244,1,6.8462,0.0281,93.1257,0.7673,99.3,69.95
+slip_010pct,0.001,5760,3536,61.39,241,1,6.8156,0.0283,93.1561,0.7621,98.6,67.31
+slip_025pct,0.0025,5760,3445,59.81,226,1,6.5602,0.029,93.4107,0.7489,96.9,65.75

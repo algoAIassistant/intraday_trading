@@ -1,0 +1,2 @@
+# gap_directional_trap__bearish_medium_large__candidate_1_v1
+# research_status: deployable_variant_phase_r6_validated_2026_03_27
