@@ -36,6 +36,11 @@ virtualenv/
 # Runtime engineering outputs
 2_0_agent_engineering/engineering_runtime_outputs/
 
+# Large research output detail CSVs (local only, too large for GitHub)
+1_0_strategy_research/research_outputs/**/*_event_rows_*.csv
+1_0_strategy_research/research_outputs/**/*_event_detail_*.csv
+1_0_strategy_research/research_outputs/**/*_session_detail_*.csv
+
 # Generic data file types
 *.parquet
 *.feather

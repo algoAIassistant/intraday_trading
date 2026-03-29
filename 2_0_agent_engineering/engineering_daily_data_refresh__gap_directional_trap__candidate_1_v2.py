@@ -484,6 +484,12 @@ def main() -> None:
         print("  flag         : --full-universe", flush=True)
     print("#" * 66, flush=True)
 
+    # Ensure cache directories exist — required on a fresh cloud runner (cold start)
+    DAILY_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    MARKET_DAILY_DIR.mkdir(parents=True, exist_ok=True)
+    print(f"  [mkdir] {DAILY_CACHE_DIR}", flush=True)
+    print(f"  [mkdir] {MARKET_DAILY_DIR}", flush=True)
+
     from massive import RESTClient
     client = RESTClient(api_key=_get_api_key())
 

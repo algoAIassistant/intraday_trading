@@ -91,6 +91,16 @@ jobs:
           restore-keys: |
             data-cache-
 
+      # ── 5b. Ensure cache directories exist (cold-start safety) ─────────────
+      # On the very first run there is no restored cache, so the directories
+      # do not exist. Stage 0 Python code also creates them, but this step
+      # prevents any edge-case race before the Python process starts.
+      - name: Ensure cache directories exist
+        run: |
+          mkdir -p 1_0_strategy_research/research_data_cache/daily
+          mkdir -p 1_0_strategy_research/research_data_cache/market/daily
+          mkdir -p 2_0_agent_engineering/engineering_runtime_outputs/plan_next_day_day_trade
+
       # ── 6. Run nightly pipeline ─────────────────────────────────────────────
       - name: Run nightly pipeline (v2)
         env:

@@ -188,6 +188,17 @@ def build_operational_universe(dry_run: bool = False, no_filter: bool = False) -
 
     df = pd.DataFrame(snapshots)
 
+    # Cold-start guard: no parquets exist yet (first run on fresh cloud runner).
+    # Exit cleanly so the data_refresh caller falls back to full shared universe.
+    if df.empty or "recent_close" not in df.columns:
+        print(
+            "\n  [cold-start] No daily parquets found in cache.\n"
+            "  [cold-start] Skipping pre-filter. Sub-task A will use full shared universe.\n"
+            "  [cold-start] Operational universe will be built on the next run after data is cached.",
+            flush=True,
+        )
+        return df
+
     # -- Apply pre-filter --
     if no_filter:
         op = df.copy()
