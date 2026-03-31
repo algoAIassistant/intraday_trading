@@ -6,23 +6,24 @@
 #
 # Runs after market close on every weekday (Mon–Fri).
 # Schedule: 21:05 UTC = 5:05 PM ET.
-#   Scheduled 30 minutes after the gap_directional_trap workflow (20:35 UTC)
-#   to allow that pipeline to complete and save the shared data cache first.
-#   This variant has no data refresh step — it reads from the shared cache
-#   populated by gap_directional_trap.
+#   Scheduled 30 minutes after the gap_directional_trap workflow (20:35 UTC).
+#   In normal operation gap_directional_trap will have already refreshed the
+#   shared cache; Stage 0 here will be a fast incremental no-op.
+#   If gap_directional_trap failed or this workflow is dispatched manually,
+#   Stage 0 performs a full refresh independently.
 #
 # On each run:
-#   1. Restores shared data cache (written by gap_directional_trap workflow)
-#   2. Runs Stage 1: nightly signal scan
-#   3. Runs Stage 2: run summary (JSON)
-#   4. Runs Stage 3: Telegram delivery
+#   1. Restores shared data cache
+#   2. Runs Stage 0: data refresh (stock cache, market cache, context model)
+#   3. Saves updated cache
+#   4. Runs Stage 1: nightly signal scan
+#   5. Runs Stage 2: run summary (JSON)
+#   6. Runs Stage 3: Telegram delivery
 #
 # Required repository secrets (Settings → Secrets and variables → Actions):
+#   MASSIVE_API_KEY      — data provider API key (Stage 0 refresh)
 #   TELEGRAM_BOT_TOKEN   — Telegram bot token
 #   TELEGRAM_CHAT_ID     — Telegram chat/channel ID
-#
-# Note: MASSIVE_API_KEY is NOT required — data refresh belongs to gap_directional_trap.
-# If gap_directional_trap has not yet run today, the scan will use yesterday's cache.
 #
 # workflow_dispatch inputs allow manual test runs.
 
@@ -44,6 +45,11 @@ on:
         type: boolean
         required: false
         default: false
+      skip_refresh:
+        description: 'Skip Stage 0 data refresh (use cached data only)'
+        type: boolean
+        required: false
+        default: false
       skip_scan:
         description: 'Skip Stage 1 (re-summarize and re-deliver existing signal pack)'
         type: boolean
@@ -58,7 +64,7 @@ concurrency:
 jobs:
   run-nightly-pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       # ── 1. Checkout ─────────────────────────────────────────────────────────
@@ -73,7 +79,7 @@ jobs:
 
       # ── 3. Install dependencies ─────────────────────────────────────────────
       - name: Install Python dependencies
-        run: pip install --quiet --upgrade pandas pyarrow numpy requests
+        run: pip install --quiet --upgrade massive pandas pyarrow numpy requests
 
       # ── 4. Compute today's date for cache key ───────────────────────────────
       - name: Get current date (UTC)
@@ -81,9 +87,9 @@ jobs:
         run: echo "date=$(date -u +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
       # ── 5. Restore shared data cache ────────────────────────────────────────
-      # Reads the cache saved by the gap_directional_trap workflow.
-      # This variant does not refresh data — it reads from the existing cache only.
-      # If today's cache key is not found, falls back to the most recent available.
+      # Stage 0 extends the cache incrementally. Restoring first avoids re-fetching
+      # data that gap_directional_trap already fetched in the same evening.
+      # Falls back to most recent available key if today's key is not yet present.
       - name: Restore data cache
         uses: actions/cache@v4
         with:
@@ -104,6 +110,7 @@ jobs:
       # ── 6. Run nightly pipeline ─────────────────────────────────────────────
       - name: Run nightly pipeline (failed_breakdown_reclaim template_002)
         env:
+          MASSIVE_API_KEY:    ${{ secrets.MASSIVE_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
@@ -119,6 +126,11 @@ jobs:
             ARGS="$ARGS --preview"
           fi
 
+          # Skip refresh (manual dispatch only)
+          if [ "${{ github.event.inputs.skip_refresh }}" = "true" ]; then
+            ARGS="$ARGS --skip-refresh"
+          fi
+
           # Skip scan (manual dispatch only — re-deliver existing signal pack)
           if [ "${{ github.event.inputs.skip_scan }}" = "true" ]; then
             ARGS="$ARGS --skip-scan"
@@ -127,7 +139,17 @@ jobs:
           echo "Running orchestrator with args: $ARGS"
           python 2_0_agent_engineering/engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py $ARGS
 
-      # ── 7. Upload runtime outputs as artifact ────────────────────────────────
+      # ── 7. Save updated data cache ──────────────────────────────────────────
+      - name: Save updated data cache
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: |
+            1_0_strategy_research/research_data_cache/daily/
+            1_0_strategy_research/research_data_cache/market/
+          key: data-cache-${{ steps.date.outputs.date }}
+
+      # ── 8. Upload runtime outputs as artifact ────────────────────────────────
       - name: Upload runtime outputs
         if: always()
         uses: actions/upload-artifact@v4

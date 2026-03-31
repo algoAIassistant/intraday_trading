@@ -4,32 +4,40 @@ engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py
 Standalone nightly orchestrator for:
   failed_breakdown_reclaim__weak_reclaim_depth__time_exit_primary__template_002
 
-Pipeline (3 stages):
+Pipeline (4 stages):
+  Stage 0 — daily data refresh (stock cache, market cache, context model)
   Stage 1 — nightly signal scan
   Stage 2 — run summary (JSON + terminal print)
   Stage 3 — Telegram delivery
 
-Not included (pending future engineering work):
-  - Data refresh (shared cache is kept fresh by the existing gap_directional_trap refresh)
-  - Selection / ranking layer (phase_r7 skipped — single validated variant in family)
+  Stage 0 reuses engineering_daily_data_refresh__gap_directional_trap__candidate_1_v2.py.
+  Both variants share the same OHLCV and market-context data files.
+
+  Selection / ranking layer: phase_r7 skipped — single validated variant in family.
 
 Usage:
-  # Full run (scan + summary + Telegram), auto-detect signal date
-  TELEGRAM_BOT_TOKEN=xxx TELEGRAM_CHAT_ID=yyy \\
+  # Full run (refresh + scan + summary + Telegram), auto-detect signal date
+  MASSIVE_API_KEY=xxx TELEGRAM_BOT_TOKEN=yyy TELEGRAM_CHAT_ID=zzz \\
       python engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py
 
   # Full run with explicit date
-  TELEGRAM_BOT_TOKEN=xxx TELEGRAM_CHAT_ID=yyy \\
+  MASSIVE_API_KEY=xxx TELEGRAM_BOT_TOKEN=yyy TELEGRAM_CHAT_ID=zzz \\
       python engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py --signal-date 2026-03-31
 
-  # Preview — run scan + summary, print Telegram message without sending
+  # Preview — refresh + scan + summary, print Telegram message without sending
   python engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py --signal-date 2026-03-31 --preview
 
-  # Skip Telegram — run scan + summary only
+  # Skip refresh (data already fresh — e.g. gap_directional_trap already ran)
+  python engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py --signal-date 2026-03-31 --skip-refresh
+
+  # Skip Telegram — run stages 0–2 only
   python engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py --signal-date 2026-03-31 --skip-telegram
 
   # Skip scan — re-summarize + re-deliver existing signal pack
   python engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py --signal-date 2026-03-31 --skip-scan
+
+Required environment variables (Stage 0 refresh):
+  MASSIVE_API_KEY
 
 Required environment variables (Stage 3 real send only):
   TELEGRAM_BOT_TOKEN
@@ -54,6 +62,12 @@ import pandas as pd
 # Paths
 # ---------------------------------------------------------------------------
 ENG_ROOT = Path(__file__).resolve().parent   # 2_0_agent_engineering/
+
+# Stage 0: reuse the shared refresh module from gap_directional_trap.
+# Both variants read from the same OHLCV and market-context data files.
+REFRESH_MODULE = (
+    ENG_ROOT / "engineering_daily_data_refresh__gap_directional_trap__candidate_1_v2.py"
+)
 
 SCAN_MODULE = (
     ENG_ROOT
@@ -257,7 +271,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
             "Nightly orchestrator: failed_breakdown_reclaim__template_002  "
-            "(scan -> summary)"
+            "(refresh -> scan -> summary -> Telegram)"
         )
     )
     parser.add_argument(
@@ -265,6 +279,11 @@ def main() -> None:
         metavar="YYYY-MM-DD",
         default=None,
         help="Signal date to process. Defaults to auto-detect from latest signal pack.",
+    )
+    parser.add_argument(
+        "--skip-refresh",
+        action="store_true",
+        help="Skip Stage 0 (data refresh). Use when data is already fresh.",
     )
     parser.add_argument(
         "--skip-scan",
@@ -277,7 +296,7 @@ def main() -> None:
     parser.add_argument(
         "--skip-telegram",
         action="store_true",
-        help="Run Stages 1–2 only. Do not run Telegram delivery.",
+        help="Run Stages 0–2 only. Do not run Telegram delivery.",
     )
     parser.add_argument(
         "--preview",
@@ -294,11 +313,31 @@ def main() -> None:
         print("  signal_date: auto-detect after Stage 1", flush=True)
     if args.preview:
         print("  mode: PREVIEW (Telegram will print, not send)", flush=True)
+    if args.skip_refresh:
+        print("  flag: --skip-refresh   (Stage 0 will not run)", flush=True)
     if args.skip_scan:
         print("  flag: --skip-scan      (Stage 1 will not run)", flush=True)
     if args.skip_telegram:
         print("  flag: --skip-telegram  (Stage 3 will not run)", flush=True)
     print("#" * 66, flush=True)
+
+    # ------------------------------------------------------------------
+    # Stage 0: daily data refresh
+    # ------------------------------------------------------------------
+    if args.skip_refresh:
+        print("\n[info]  --skip-refresh set. Skipping Stage 0 (data refresh).", flush=True)
+    else:
+        print(
+            "\n[Stage 0] Extends stock + market parquets and rebuilds market context.\n"
+            "          Reuses: engineering_daily_data_refresh__gap_directional_trap__candidate_1_v2.py",
+            flush=True,
+        )
+        cmd_refresh = [sys.executable, str(REFRESH_MODULE)]
+        if args.signal_date:
+            cmd_refresh += ["--signal-date", args.signal_date]
+        if args.preview:
+            cmd_refresh.append("--preview")
+        run_stage("daily_data_refresh", cmd_refresh)
 
     # ------------------------------------------------------------------
     # Stage 1: nightly signal scan
