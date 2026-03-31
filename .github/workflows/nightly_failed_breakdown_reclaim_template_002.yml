@@ -125,8 +125,7 @@ jobs:
           fi
 
           echo "Running orchestrator with args: $ARGS"
-          cd 2_0_agent_engineering
-          python engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py $ARGS
+          python 2_0_agent_engineering/engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py $ARGS
 
       # ── 7. Upload runtime outputs as artifact ────────────────────────────────
       - name: Upload runtime outputs
