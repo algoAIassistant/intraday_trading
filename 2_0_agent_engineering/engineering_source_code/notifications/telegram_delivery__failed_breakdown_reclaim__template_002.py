@@ -87,6 +87,9 @@ VARIANT_ID = "failed_breakdown_reclaim__weak_reclaim_depth__time_exit_primary__t
 
 TELEGRAM_API_URL = "https://api.telegram.org/bot{token}/sendMessage"
 
+# Telegram HTML message limit is 4096 chars. Use 4000 as safe ceiling.
+TELEGRAM_MAX_CHARS = 4000
+
 DEFAULT_ACTIVATE_ET = "13:15"
 DEFAULT_CANCEL_ET   = "13:30"
 DEFAULT_EXIT_ET     = "14:30"
@@ -304,6 +307,36 @@ def build_no_signals_message(signal_date: str, trade_date: str, regime: str = ""
 # Telegram send
 # ---------------------------------------------------------------------------
 
+def split_message_into_chunks(text: str, max_chars: int = TELEGRAM_MAX_CHARS) -> list[str]:
+    """
+    Split a newline-delimited HTML message into chunks each <= max_chars.
+
+    Splits only on line boundaries so no HTML tag is ever cut mid-tag.
+    Each chunk is a complete, self-contained substring of the original message.
+    If a single line exceeds max_chars it is sent as its own chunk (rare edge case).
+    """
+    lines = text.split("\n")
+    chunks: list[str] = []
+    current_lines: list[str] = []
+    current_len = 0
+
+    for line in lines:
+        # +1 for the \n separator that will be re-added between lines
+        line_cost = len(line) + (1 if current_lines else 0)
+        if current_lines and current_len + line_cost > max_chars:
+            chunks.append("\n".join(current_lines))
+            current_lines = [line]
+            current_len = len(line)
+        else:
+            current_lines.append(line)
+            current_len += line_cost
+
+    if current_lines:
+        chunks.append("\n".join(current_lines))
+
+    return chunks
+
+
 def send_telegram_message(text: str, token: str, chat_id: str) -> dict:
     url = TELEGRAM_API_URL.format(token=token)
     payload = {
@@ -315,6 +348,19 @@ def send_telegram_message(text: str, token: str, chat_id: str) -> dict:
     resp = requests.post(url, json=payload, timeout=15)
     resp.raise_for_status()
     return resp.json()
+
+
+def send_telegram_chunks(chunks: list[str], token: str, chat_id: str) -> None:
+    """Send a list of message chunks sequentially. Raises on first failure."""
+    n = len(chunks)
+    for i, chunk in enumerate(chunks, start=1):
+        result = send_telegram_message(chunk, token, chat_id)
+        if result.get("ok"):
+            msg_id = result.get("result", {}).get("message_id", "?")
+            print(f"Sent chunk {i}/{n}. message_id={msg_id}", file=sys.stderr)
+        else:
+            print(f"Telegram API error on chunk {i}/{n}: {result}", file=sys.stderr)
+            sys.exit(1)
 
 
 # ---------------------------------------------------------------------------
@@ -368,12 +414,16 @@ def main():
     else:
         message = build_digest_message(df)
 
+    # Split into safe chunks regardless of signal count
+    chunks = split_message_into_chunks(message)
+
     # Preview or send
     if args.preview:
-        print("─" * 60)
-        print(message)
-        print("─" * 60)
-        print(f"\nMessage length: {len(message)} chars", file=sys.stderr)
+        for i, chunk in enumerate(chunks, start=1):
+            print("─" * 60)
+            print(chunk)
+            print("─" * 60)
+            print(f"Chunk {i}/{len(chunks)}: {len(chunk)} chars", file=sys.stderr)
         print("Preview mode — nothing sent.", file=sys.stderr)
         return
 
@@ -387,13 +437,7 @@ def main():
         print("ERROR: TELEGRAM_CHAT_ID env var not set.", file=sys.stderr)
         sys.exit(1)
 
-    result = send_telegram_message(message, token, chat_id)
-    if result.get("ok"):
-        msg_id = result.get("result", {}).get("message_id", "?")
-        print(f"Sent. message_id={msg_id}", file=sys.stderr)
-    else:
-        print(f"Telegram API error: {result}", file=sys.stderr)
-        sys.exit(1)
+    send_telegram_chunks(chunks, token, chat_id)
 
 
 if __name__ == "__main__":
