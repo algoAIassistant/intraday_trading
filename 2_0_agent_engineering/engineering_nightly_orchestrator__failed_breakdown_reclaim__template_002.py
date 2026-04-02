@@ -4,15 +4,12 @@ engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py
 Standalone nightly orchestrator for:
   failed_breakdown_reclaim__weak_reclaim_depth__time_exit_primary__template_002
 
-Pipeline (3 stages):
+Pipeline (4 stages):
   Stage 0 — daily data refresh (stock cache, market cache, context model)
-  Stage 1 — nightly signal scan
-  Stage 2 — run summary (JSON + terminal print)
-  Stage 3 — Telegram delivery
-
-  Journal write is not yet wired into this orchestrator.
-  TODO: add journal_write stage once engineering_journal_writer.py is
-        confirmed present in the repo and the fbr_t002 strategy block is registered.
+  Stage 1 — nightly signal scan  (→ signal_pack, all qualifying candidates)
+  Stage 2 — selection layer      (→ selected_top_3, ranked top 3)
+  Stage 3 — run summary (JSON + terminal print)
+  Stage 4 — Telegram delivery    (reads selected_top_3)
 
   Stage 0 reuses engineering_daily_data_refresh__gap_directional_trap__candidate_1_v2.py.
   Both variants share the same OHLCV and market-context data files.
@@ -102,6 +99,14 @@ CONTEXT_MODEL_CSV = (
 )
 
 SIGNAL_PACK_GLOB = "signal_pack__failed_breakdown_reclaim__template_002__*.csv"
+
+SELECTION_MODULE = (
+    ENG_ROOT
+    / "integrated_strategy_modules"
+    / "plan_next_day_day_trade"
+    / "failed_breakdown_reclaim__weak_reclaim_depth__time_exit_primary__template_002"
+    / "engineering_selection_layer__failed_breakdown_reclaim__template_002.py"
+)
 
 TELEGRAM_MODULE = (
     ENG_ROOT
@@ -360,7 +365,7 @@ def main() -> None:
     if args.skip_scan:
         print("  flag: --skip-scan      (Stage 1 will not run)", flush=True)
     if args.skip_telegram:
-        print("  flag: --skip-telegram  (Stage 3 will not run)", flush=True)
+        print("  flag: --skip-telegram  (Stage 4 will not run)", flush=True)
     print("#" * 66, flush=True)
 
     # ------------------------------------------------------------------
@@ -419,11 +424,22 @@ def main() -> None:
         run_stage("nightly_signal_scan", cmd_scan)
 
     # ------------------------------------------------------------------
-    # Stage 2: run summary
+    # Stage 2: selection layer
     # ------------------------------------------------------------------
     date_tag = signal_date.replace("-", "_")
     print(
         f"\n[Stage 2] Reads:  signal_pack__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
+        f"          Writes: selected_top_3__failed_breakdown_reclaim__template_002__{date_tag}.csv",
+        flush=True,
+    )
+    cmd_sel = [sys.executable, str(SELECTION_MODULE), "--signal-date", signal_date]
+    run_stage("selection_layer", cmd_sel)
+
+    # ------------------------------------------------------------------
+    # Stage 3: run summary
+    # ------------------------------------------------------------------
+    print(
+        f"\n[Stage 3] Reads:  signal_pack__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
         f"          Writes: run_summary__failed_breakdown_reclaim__template_002__{date_tag}.json",
         flush=True,
     )
@@ -437,15 +453,15 @@ def main() -> None:
     print(f"\n[OK]   summary completed successfully.", flush=True)
 
     # ------------------------------------------------------------------
-    # Stage 3: Telegram delivery
+    # Stage 4: Telegram delivery
     # ------------------------------------------------------------------
     if args.skip_telegram:
-        print("\n[info]  --skip-telegram set. Pipeline complete (Stages 0-2 only).", flush=True)
+        print("\n[info]  --skip-telegram set. Pipeline complete (Stages 0-3 only).", flush=True)
         return
 
     mode_note = "PREVIEW (print only)" if args.preview else "LIVE (Telegram send)"
     print(
-        f"\n[Stage 3] Reads:  signal_pack__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
+        f"\n[Stage 4] Reads:  selected_top_3__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
         f"          Mode:   {mode_note}",
         flush=True,
     )

@@ -75,9 +75,9 @@ SIGNAL_PACK_DIR = (
     / "failed_breakdown_reclaim__template_002"
 )
 
-FILE_PREFIX  = "signal_pack__failed_breakdown_reclaim__template_002__"
+FILE_PREFIX  = "selected_top_3__failed_breakdown_reclaim__template_002__"
 DATE_PATTERN = re.compile(
-    r"signal_pack__failed_breakdown_reclaim__template_002__(\d{4}_\d{2}_\d{2})\.csv$"
+    r"selected_top_3__failed_breakdown_reclaim__template_002__(\d{4}_\d{2}_\d{2})\.csv$"
 )
 
 # ---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ DEFAULT_EXIT_ET     = "14:30"
 # File resolution
 # ---------------------------------------------------------------------------
 
-def find_latest_signal_pack() -> Path:
+def find_latest_selected_top_3() -> Path:
     candidates = []
     for p in SIGNAL_PACK_DIR.glob(f"{FILE_PREFIX}*.csv"):
         m = DATE_PATTERN.search(p.name)
@@ -107,18 +107,18 @@ def find_latest_signal_pack() -> Path:
             candidates.append((m.group(1), p))
     if not candidates:
         raise FileNotFoundError(
-            f"No signal_pack files found in:\n  {SIGNAL_PACK_DIR}"
+            f"No selected_top_3 files found in:\n  {SIGNAL_PACK_DIR}"
         )
     candidates.sort(key=lambda x: x[0], reverse=True)
     return candidates[0][1]
 
 
-def find_signal_pack_for_date(signal_date: str) -> Path:
+def find_selected_top_3_for_date(signal_date: str) -> Path:
     date_str = signal_date.replace("-", "_")
     target = SIGNAL_PACK_DIR / f"{FILE_PREFIX}{date_str}.csv"
     if not target.exists():
         raise FileNotFoundError(
-            f"No signal_pack file for date {signal_date}:\n  {target}"
+            f"No selected_top_3 file for date {signal_date}:\n  {target}"
         )
     return target
 
@@ -163,13 +163,29 @@ def fmt_risk_pct(val) -> str:
 
 
 def fmt_price_bucket(bucket: str) -> str:
-    """'price_80_200' → '$80–200'"""
+    """'price_10_30' → '$10–30'"""
     try:
-        # Remove 'price_' prefix, replace _ with –
         s = bucket.replace("price_", "").replace("_", "–")
         return f"${s}"
     except Exception:
         return bucket
+
+
+def fmt_adv_bucket(bucket: str) -> str:
+    """'adv_100m_plus' → '$100M+'  |  'adv_50m_100m' → '$50–100M'"""
+    mapping = {
+        "adv_100m_plus": "$100M+",
+        "adv_50m_100m":  "$50–100M",
+        "adv_20m_50m":   "$20–50M",
+    }
+    return mapping.get(str(bucket).strip(), str(bucket))
+
+
+def fmt_score(val) -> str:
+    try:
+        return f"{float(val):.3f}"
+    except (ValueError, TypeError):
+        return str(val)
 
 
 def is_blank(val) -> bool:
@@ -209,19 +225,16 @@ def _header_block(signal_date: str, trade_date: str, n_signals: int,
 
 
 def _signal_block(rank: int, row: pd.Series) -> list[str]:
-    ticker        = get_str(row, "ticker")
-    adv_bucket    = get_str(row, "adv_dollar_bucket")
-    price_bucket  = fmt_price_bucket(get_str(row, "price_bucket"))
-    entry         = fmt_price(row.get("entry_price"))
-    stop          = fmt_price(row.get("stop_price"))
-    risk_pct      = fmt_risk_pct(row.get("risk_distance_pct"))
-    depth_pct     = fmt_pct_raw(row.get("breakdown_depth_pct"))
-    reclaim_pct   = fmt_pct_raw(row.get("reclaim_pct"))
-    ctx_conf      = get_str(row, "context_confidence")
-    warnings      = get_str(row, "warning_flags")
-    variant       = get_str(row, "variant_name")
+    ticker       = get_str(row, "ticker")
+    price_bucket = fmt_price_bucket(get_str(row, "price_bucket"))
+    adv          = fmt_adv_bucket(get_str(row, "adv_dollar_bucket"))
+    entry        = fmt_price(row.get("entry_price"))
+    stop         = fmt_price(row.get("stop_price"))
+    risk_pct     = fmt_risk_pct(row.get("risk_distance_pct"))
+    ctx_conf     = get_str(row, "context_confidence")
+    score        = fmt_score(row.get("selection_score"))
+    warnings     = get_str(row, "warning_flags")
 
-    # risk per share (entry - stop)
     try:
         risk_per_share = f"  ·  ${float(row['entry_price']) - float(row['stop_price']):.2f}/sh"
     except (ValueError, TypeError, KeyError):
@@ -230,24 +243,20 @@ def _signal_block(rank: int, row: pd.Series) -> list[str]:
     lines = [
         "",
         f"<b>{'─'*40}</b>",
-        f"<b>#{rank}  ·  {ticker}  ·  {adv_bucket}  ·  {price_bucket}</b>",
+        f"<b>#{rank}  ·  {ticker}  ·  {price_bucket}</b>",
         f"<b>{'─'*40}</b>",
-        f"▶ Entry:   <b>{entry}</b>   <i>(buy stop above signal high)</i>",
-        f"◼ Stop:    {stop}   <i>(signal low — no buffer)</i>",
+        f"▶ Entry:   <b>{entry}</b>   <i>(buy stop)</i>",
+        f"◼ Stop:    {stop}",
         f"   Risk:   {risk_pct}{risk_per_share}",
-        f"   Depth:  {depth_pct}  <i>(breakdown below prior low)</i>",
-        f"   Reclaim: {reclaim_pct}  <i>(close above prior low)</i>",
+        "",
+        f"ADV {adv}  ·  conf: {ctx_conf}  ·  Score {score}",
     ]
 
-    # Confidence line — only note if low (bearish regime)
     if ctx_conf == "low":
-        lines.append(f"⚠️ conf: <b>low</b>  <i>(bearish regime — reduced edge after slippage)</i>")
+        lines.append("⚠️ <i>bearish regime — reduced edge after slippage</i>")
 
-    # Variant name (small)
-    lines.append(f"<i>{variant}</i>")
-
-    if warnings:
-        lines.append(f"⚠️ {warnings}")
+    if warnings and "very_wide_stop" in warnings:
+        lines.append("⚠️ <i>wide stop — size small</i>")
 
     return lines
 
@@ -294,11 +303,7 @@ def build_no_signals_message(signal_date: str, trade_date: str, regime: str = ""
     ]
 
     if regime:
-        lines.append(f"Regime today: <b>{regime}</b>")
-        if regime == "bearish":
-            lines.append("<i>(Bearish regime — signals emit but flagged low confidence. None passed ADV/price/filter gates today.)</i>")
-        else:
-            lines.append("<i>(This variant runs in all regimes — no setups met the locked filters today.)</i>")
+        lines.append(f"Regime: <b>{regime}</b>  <i>(no setups met filters today)</i>")
 
     return "\n".join(lines)
 
@@ -386,9 +391,9 @@ def main():
     # Resolve file
     try:
         if args.signal_date:
-            csv_path = find_signal_pack_for_date(args.signal_date)
+            csv_path = find_selected_top_3_for_date(args.signal_date)
         else:
-            csv_path = find_latest_signal_pack()
+            csv_path = find_latest_selected_top_3()
     except FileNotFoundError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -408,7 +413,7 @@ def main():
         if "market_regime_label" in df.columns:
             regime = str(df.iloc[0]["market_regime_label"]).strip()
 
-    # Build message
+    # Build message — all rows in selected_top_3 are already selected
     if df.empty:
         message = build_no_signals_message(sig_date_str, trade_date, regime)
     else:
