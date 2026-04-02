@@ -41,14 +41,15 @@ Sample rendered output (preview):
 
   3 signals ▼
   ─────────────────────────────────────────────
-  #1  ·  NVDA  ·  adv_100m_plus  ·  $400–800
-  ─────────────────────────────────────────────
-  ▶ Entry:   $487.20   (buy stop above signal high)
-  ◼ Stop:    $476.10   (signal low — no buffer)
-     Risk:   2.3%  ·  $11.10/sh
-     Depth:  0.82%  (breakdown below prior low)
-     Reclaim: 0.12%  (close above prior low)
-  ─────────────────────────────────────────────
+  #1  ·  NVDA  ·  $400–800
+  ──────────────
+  ✅ Entry:  $487.20  (buy stop)
+  🛑 Stop:   $476.10
+  ⚠️ Risk:   2.3%  ·  $11.10/sh
+
+  💵 ADV:    $100M+
+  📊 Score:  0.720
+  🧐 CONF:   high
 """
 
 import argparse
@@ -242,21 +243,16 @@ def _signal_block(rank: int, row: pd.Series) -> list[str]:
 
     lines = [
         "",
-        f"<b>{'─'*40}</b>",
         f"<b>#{rank}  ·  {ticker}  ·  {price_bucket}</b>",
-        f"<b>{'─'*40}</b>",
-        f"▶ Entry:   <b>{entry}</b>   <i>(buy stop)</i>",
-        f"◼ Stop:    {stop}",
-        f"   Risk:   {risk_pct}{risk_per_share}",
+        f"<b>{'─'*14}</b>",
+        f"✅ Entry:  <b>{entry}</b>  <i>(buy stop)</i>",
+        f"🛑 Stop:   {stop}",
+        f"⚠️ Risk:   {risk_pct}{risk_per_share}",
         "",
-        f"ADV {adv}  ·  conf: {ctx_conf}  ·  Score {score}",
+        f"💵 ADV:    {adv}",
+        f"📊 Score:  {score}",
+        f"🧐 CONF:   {ctx_conf}",
     ]
-
-    if ctx_conf == "low":
-        lines.append("⚠️ <i>bearish regime — reduced edge after slippage</i>")
-
-    if warnings and "very_wide_stop" in warnings:
-        lines.append("⚠️ <i>wide stop — size small</i>")
 
     return lines
 
