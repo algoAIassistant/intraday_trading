@@ -84,6 +84,19 @@ SIGNAL_PACK_DIR = (
     / "failed_breakdown_reclaim__template_002"
 )
 
+# Context model CSV — used to confirm the latest usable signal_date after Stage 0 refresh.
+# Stage 0 rebuilds this file; reading it here gives the authoritative signal_date.
+REPO_ROOT = ENG_ROOT.parent
+CONTEXT_MODEL_CSV = (
+    REPO_ROOT
+    / "1_0_strategy_research"
+    / "research_outputs"
+    / "family_lineages"
+    / "plan_next_day_day_trade"
+    / "phase_r1_market_context_model"
+    / "market_context_model_plan_next_day_day_trade.csv"
+)
+
 SIGNAL_PACK_GLOB = "signal_pack__failed_breakdown_reclaim__template_002__*.csv"
 
 TELEGRAM_MODULE = (
@@ -91,6 +104,13 @@ TELEGRAM_MODULE = (
     / "engineering_source_code"
     / "notifications"
     / "telegram_delivery__failed_breakdown_reclaim__template_002.py"
+)
+
+JOURNAL_WRITER_MODULE = (
+    ENG_ROOT
+    / "engineering_source_code"
+    / "production_utilities"
+    / "engineering_journal_writer.py"
 )
 
 # ---------------------------------------------------------------------------
@@ -137,8 +157,31 @@ def run_stage(stage_name: str, cmd: list) -> None:
     print(f"\n[OK]   {stage_name} completed successfully.", flush=True)
 
 
+def resolve_signal_date_from_context_model() -> str:
+    """
+    Read the freshly rebuilt context model and return the latest usable signal_date.
+
+    Called after Stage 0 completes. Stage 0 rebuilds CONTEXT_MODEL_CSV, so reading
+    it here gives the authoritative latest market date for which data exists.
+    """
+    if not CONTEXT_MODEL_CSV.exists():
+        print(f"[FAIL] Context model not found: {CONTEXT_MODEL_CSV}")
+        sys.exit(1)
+    ctx = pd.read_csv(CONTEXT_MODEL_CSV, usecols=["date", "market_regime_label"], dtype=str)
+    usable = ctx[ctx["market_regime_label"].str.strip() != "warmup_na"]
+    if usable.empty:
+        print("[FAIL] Context model has no usable (non-warmup) dates.")
+        sys.exit(1)
+    latest = usable["date"].str.strip().max()
+    return latest
+
+
 def resolve_date_from_latest_signal_pack() -> str:
-    """Return the signal date from the most recently written signal pack (YYYY-MM-DD)."""
+    """Return the signal date from the most recently written signal pack (YYYY-MM-DD).
+
+    Used only when --skip-scan is set and no explicit --signal-date is provided.
+    In that case there is no scan output to resolve from, so the existing pack is used.
+    """
     packs = sorted(SIGNAL_PACK_DIR.glob(SIGNAL_PACK_GLOB))
     if not packs:
         print("[FAIL] No signal_pack file found in output dir. Run Stage 1 first.")
@@ -168,7 +211,7 @@ def load_signal_pack(signal_date: str) -> pd.DataFrame:
 
     missing = REQUIRED_SIGNAL_COLUMNS - set(df.columns)
     if missing:
-        print(f"[FAIL] Signal pack is malformed — missing columns: {sorted(missing)}")
+        print(f"[FAIL] Signal pack is malformed -- missing columns: {sorted(missing)}")
         sys.exit(1)
 
     return df
@@ -296,7 +339,7 @@ def main() -> None:
     parser.add_argument(
         "--skip-telegram",
         action="store_true",
-        help="Run Stages 0–2 only. Do not run Telegram delivery.",
+        help="Run Stages 0-2 only. Do not run Telegram delivery.",
     )
     parser.add_argument(
         "--preview",
@@ -308,9 +351,11 @@ def main() -> None:
     print("\n" + "#" * 66, flush=True)
     print("  failed_breakdown_reclaim__template_002  |  nightly orchestrator", flush=True)
     if args.signal_date:
-        print(f"  signal_date: {args.signal_date}", flush=True)
+        print(f"  signal_date: {args.signal_date}  (explicit override)", flush=True)
+    elif args.skip_scan:
+        print("  signal_date: auto-detect from latest signal pack  (--skip-scan path)", flush=True)
     else:
-        print("  signal_date: auto-detect after Stage 1", flush=True)
+        print("  signal_date: auto-detect from context model after Stage 0", flush=True)
     if args.preview:
         print("  mode: PREVIEW (Telegram will print, not send)", flush=True)
     if args.skip_refresh:
@@ -340,6 +385,28 @@ def main() -> None:
         run_stage("daily_data_refresh", cmd_refresh)
 
     # ------------------------------------------------------------------
+    # Resolve signal_date — authoritative, before Stage 1
+    # ------------------------------------------------------------------
+    # Resolution priority:
+    #   1. Explicit --signal-date arg (manual override — always wins)
+    #   2. --skip-scan with no explicit date: read the latest existing signal pack
+    #      (Stage 1 will not run, so the existing pack IS the target date)
+    #   3. Normal auto-detect: read the freshly rebuilt context model after Stage 0
+    #      (Stage 0 rebuilt it; the latest usable date there is the correct signal date)
+    if args.signal_date:
+        signal_date = args.signal_date
+        print(f"\n[info]  signal_date: {signal_date}  (explicit override)", flush=True)
+    elif args.skip_scan:
+        signal_date = resolve_date_from_latest_signal_pack()
+        print(f"\n[info]  signal_date resolved from latest signal pack: {signal_date}"
+              "  (--skip-scan path)", flush=True)
+    else:
+        signal_date = resolve_signal_date_from_context_model()
+        print(f"\n[info]  signal_date resolved from context model: {signal_date}", flush=True)
+
+    print(f"[info]  All remaining stages will use signal_date={signal_date}", flush=True)
+
+    # ------------------------------------------------------------------
     # Stage 1: nightly signal scan
     # ------------------------------------------------------------------
     if args.skip_scan:
@@ -351,18 +418,8 @@ def main() -> None:
             flush=True,
         )
         cmd_scan = [sys.executable, str(SCAN_MODULE)]
-        if args.signal_date:
-            cmd_scan += ["--signal-date", args.signal_date]
+        cmd_scan += ["--signal-date", signal_date]   # always explicit — no implicit auto-detect
         run_stage("nightly_signal_scan", cmd_scan)
-
-    # ------------------------------------------------------------------
-    # Resolve signal_date
-    # ------------------------------------------------------------------
-    if args.signal_date:
-        signal_date = args.signal_date
-    else:
-        signal_date = resolve_date_from_latest_signal_pack()
-        print(f"\n[info]  signal_date resolved from output: {signal_date}", flush=True)
 
     # ------------------------------------------------------------------
     # Stage 2: run summary
@@ -383,15 +440,31 @@ def main() -> None:
     print(f"\n[OK]   summary completed successfully.", flush=True)
 
     # ------------------------------------------------------------------
-    # Stage 3: Telegram delivery
+    # Stage 3: journal write + ranked snapshot
+    # ------------------------------------------------------------------
+    print(
+        f"\n[Stage 3] Writes: journal_entries__fbr_t002__{date_tag}.csv\n"
+        f"          Writes: canonical_trade_journal_v1.csv (append)\n"
+        f"          Writes: ranked_snapshot__fbr_t002__{date_tag}.csv",
+        flush=True,
+    )
+    cmd_journal = [
+        sys.executable, str(JOURNAL_WRITER_MODULE),
+        "--strategy-block", VARIANT_NAME,
+        "--signal-date", signal_date,
+    ]
+    run_stage("journal_write", cmd_journal)
+
+    # ------------------------------------------------------------------
+    # Stage 4: Telegram delivery
     # ------------------------------------------------------------------
     if args.skip_telegram:
-        print("\n[info]  --skip-telegram set. Pipeline complete (Stages 1–2 only).", flush=True)
+        print("\n[info]  --skip-telegram set. Pipeline complete (Stages 0-3 only).", flush=True)
         return
 
     mode_note = "PREVIEW (print only)" if args.preview else "LIVE (Telegram send)"
     print(
-        f"\n[Stage 3] Reads:  signal_pack__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
+        f"\n[Stage 4] Reads:  signal_pack__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
         f"          Mode:   {mode_note}",
         flush=True,
     )
