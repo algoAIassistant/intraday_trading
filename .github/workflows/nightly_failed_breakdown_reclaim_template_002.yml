@@ -61,6 +61,9 @@ concurrency:
   group: nightly-failed-breakdown-reclaim-template-002
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   run-nightly-pipeline:
     runs-on: ubuntu-latest
@@ -139,7 +142,23 @@ jobs:
           echo "Running orchestrator with args: $ARGS"
           python 2_0_agent_engineering/engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py $ARGS
 
-      # ── 7. Save updated data cache ──────────────────────────────────────────
+      # ── 7. Commit updated canonical journal back to repo ────────────────────
+      # Persists Stage 3 (new rows) and Stage 5 (resolved outcomes) to git so
+      # the next run starts with the full cumulative journal.
+      # [skip ci] prevents this push from triggering another workflow run.
+      - name: Commit canonical journal
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add 2_0_agent_engineering/engineering_trade_journal/canonical_trade_journal_v1.csv
+          if git diff --staged --quiet; then
+            echo "[journal] No changes to canonical journal. Skipping commit."
+          else
+            git commit -m "nightly: update canonical_trade_journal_v1 (fbr_t002) [skip ci]"
+            git push
+          fi
+
+      # ── 8. Save updated data cache ──────────────────────────────────────────
       - name: Save updated data cache
         if: always()
         uses: actions/cache@v4

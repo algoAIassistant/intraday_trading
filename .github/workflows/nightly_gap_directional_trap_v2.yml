@@ -51,6 +51,9 @@ concurrency:
   group: nightly-gap-trap-v2
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   run-nightly-pipeline:
     runs-on: ubuntu-latest
@@ -130,7 +133,23 @@ jobs:
           cd 2_0_agent_engineering
           python engineering_nightly_orchestrator__gap_directional_trap__candidate_1_v2.py $ARGS
 
-      # ── 7. Save updated data cache ──────────────────────────────────────────
+      # ── 7. Commit updated canonical journal back to repo ────────────────────
+      # Persists Stage 3 (new rows) and Stage 5 (resolved outcomes) to git so
+      # the next run starts with the full cumulative journal.
+      # [skip ci] prevents this push from triggering another workflow run.
+      - name: Commit canonical journal
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add 2_0_agent_engineering/engineering_trade_journal/canonical_trade_journal_v1.csv
+          if git diff --staged --quiet; then
+            echo "[journal] No changes to canonical journal. Skipping commit."
+          else
+            git commit -m "nightly: update canonical_trade_journal_v1 (gdt_v2) [skip ci]"
+            git push
+          fi
+
+      # ── 8. Save updated data cache ──────────────────────────────────────────
       # Saves the incrementally extended parquets for the next run.
       # Only runs if Stage 0 extended any data (or if cache was already fresh).
       # The cache is keyed by today's date — the next day's run will restore this.
