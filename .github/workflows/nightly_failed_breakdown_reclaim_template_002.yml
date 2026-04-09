@@ -82,7 +82,7 @@ jobs:
 
       # ── 3. Install dependencies ─────────────────────────────────────────────
       - name: Install Python dependencies
-        run: pip install --quiet --upgrade massive pandas pyarrow numpy requests
+        run: pip install --quiet --upgrade massive pandas pyarrow numpy requests gspread google-auth
 
       # ── 4. Compute today's date for cache key ───────────────────────────────
       - name: Get current date (UTC)
@@ -113,9 +113,11 @@ jobs:
       # ── 6. Run nightly pipeline ─────────────────────────────────────────────
       - name: Run nightly pipeline (failed_breakdown_reclaim template_002)
         env:
-          MASSIVE_API_KEY:    ${{ secrets.MASSIVE_API_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          MASSIVE_API_KEY:              ${{ secrets.MASSIVE_API_KEY }}
+          TELEGRAM_BOT_TOKEN:           ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:             ${{ secrets.TELEGRAM_CHAT_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON:  ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_SHEET_ID:              ${{ secrets.GOOGLE_SHEET_ID }}
         run: |
           ARGS=""
 

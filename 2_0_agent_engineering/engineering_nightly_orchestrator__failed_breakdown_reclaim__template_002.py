@@ -13,6 +13,7 @@ Pipeline:
   Stage 5 — Telegram delivery    (reads selected_top_3)
   Stage 6 — auto outcome resolution (canonical journal in-place update)
   Stage 7 — sheet mirror regeneration (JSON payload)
+  Stage 8 — Google Sheets push         (overwrites GDT_v2 + FBR_t002 tabs)
 
   Stage 0 reuses engineering_daily_data_refresh__gap_directional_trap__candidate_1_v2.py.
   Both variants share the same OHLCV and market-context data files.
@@ -46,6 +47,11 @@ Required environment variables (Stage 0 refresh):
 Required environment variables (Stage 5 real send only):
   TELEGRAM_BOT_TOKEN
   TELEGRAM_CHAT_ID
+
+Required environment variables (Stage 8 Sheets push — optional):
+  GOOGLE_SERVICE_ACCOUNT_JSON   Full JSON content of the service account key
+  GOOGLE_SHEET_ID               Google Sheets spreadsheet ID
+  (if either is absent, Stage 8 skips cleanly without failing the pipeline)
 
 Research handoff source:
   1_0_strategy_research/research_outputs/family_lineages/plan_next_day_day_trade/
@@ -137,6 +143,13 @@ SHEET_MIRROR_MODULE = (
     / "engineering_source_code"
     / "production_utilities"
     / "engineering_sheet_mirror_adapter.py"
+)
+
+SHEETS_PUSH_MODULE = (
+    ENG_ROOT
+    / "engineering_source_code"
+    / "production_utilities"
+    / "engineering_google_sheets_push.py"
 )
 
 # ---------------------------------------------------------------------------
@@ -560,6 +573,26 @@ def main() -> None:
     )
     cmd_mirror = [sys.executable, str(SHEET_MIRROR_MODULE), "--all"]
     run_stage("sheet_mirror_regeneration", cmd_mirror)
+
+    # ------------------------------------------------------------------
+    # Stage 8: Google Sheets push
+    # ------------------------------------------------------------------
+    # FBR is the last nightly workflow (runs 30 min after GDT).
+    # By this point GDT's journal rows are already committed and present
+    # in the canonical journal. This push writes the full authoritative
+    # mirror (both GDT_v2 and FBR_t002 tabs) in one shot.
+    # If GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_SHEET_ID are absent,
+    # the push module exits 0 with a skip message — pipeline does not fail.
+    print(
+        "\n[Stage 8] Pushes canonical journal mirror to Google Sheets.\n"
+        "          Reads: canonical_trade_journal_v1.csv (all rows)\n"
+        "          Writes: GDT_v2 tab + FBR_t002 tab (full overwrite each run)",
+        flush=True,
+    )
+    cmd_sheets = [sys.executable, str(SHEETS_PUSH_MODULE)]
+    if args.preview:
+        cmd_sheets.append("--dry-run")
+    run_stage("google_sheets_push", cmd_sheets)
 
     print(f"\n[done]  Full nightly pipeline completed.\n", flush=True)
 
