@@ -115,7 +115,7 @@ _STRATEGY_CONFIGS: dict[str, dict] = {
         "cancel_by_et":    "13:30",
         "flatten_by_et":   "14:30",
         "signal_dir":      Path("engineering_runtime_outputs/plan_next_day_day_trade/failed_breakdown_reclaim__template_002"),
-        "selected_prefix": "signal_pack__failed_breakdown_reclaim__template_002",
+        "selected_prefix": "selected_top_3__failed_breakdown_reclaim__template_002",
         "ranked_prefix":   "signal_pack__failed_breakdown_reclaim__template_002",
     },
 }

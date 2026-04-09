@@ -4,12 +4,15 @@ engineering_nightly_orchestrator__failed_breakdown_reclaim__template_002.py
 Standalone nightly orchestrator for:
   failed_breakdown_reclaim__weak_reclaim_depth__time_exit_primary__template_002
 
-Pipeline (4 stages):
+Pipeline:
   Stage 0 — daily data refresh (stock cache, market cache, context model)
   Stage 1 — nightly signal scan  (→ signal_pack, all qualifying candidates)
   Stage 2 — selection layer      (→ selected_top_3, ranked top 3)
-  Stage 3 — run summary (JSON + terminal print)
-  Stage 4 — Telegram delivery    (reads selected_top_3)
+  Stage 3 — journal write        (→ canonical_trade_journal_v1.csv, idempotent)
+  Stage 4 — run summary          (JSON + terminal print)
+  Stage 5 — Telegram delivery    (reads selected_top_3)
+  Stage 6 — auto outcome resolution (canonical journal in-place update)
+  Stage 7 — sheet mirror regeneration (JSON payload)
 
   Stage 0 reuses engineering_daily_data_refresh__gap_directional_trap__candidate_1_v2.py.
   Both variants share the same OHLCV and market-context data files.
@@ -40,7 +43,7 @@ Usage:
 Required environment variables (Stage 0 refresh):
   MASSIVE_API_KEY
 
-Required environment variables (Stage 3 real send only):
+Required environment variables (Stage 5 real send only):
   TELEGRAM_BOT_TOKEN
   TELEGRAM_CHAT_ID
 
@@ -108,11 +111,32 @@ SELECTION_MODULE = (
     / "engineering_selection_layer__failed_breakdown_reclaim__template_002.py"
 )
 
+JOURNAL_WRITER_MODULE = (
+    ENG_ROOT
+    / "engineering_source_code"
+    / "production_utilities"
+    / "engineering_journal_writer.py"
+)
+
 TELEGRAM_MODULE = (
     ENG_ROOT
     / "engineering_source_code"
     / "notifications"
     / "telegram_delivery__failed_breakdown_reclaim__template_002.py"
+)
+
+AUTO_RESOLVER_MODULE = (
+    ENG_ROOT
+    / "engineering_source_code"
+    / "production_utilities"
+    / "engineering_auto_resolver.py"
+)
+
+SHEET_MIRROR_MODULE = (
+    ENG_ROOT
+    / "engineering_source_code"
+    / "production_utilities"
+    / "engineering_sheet_mirror_adapter.py"
 )
 
 # ---------------------------------------------------------------------------
@@ -233,6 +257,17 @@ def build_summary(signal_date: str, df: pd.DataFrame) -> dict:
         market_regime  = "unknown"
         ctx_confidence = "unknown"
 
+    # Read scan diagnostics if available (written by Stage 1)
+    date_tag = signal_date.replace("-", "_")
+    diag_path = SIGNAL_PACK_DIR / f"scan_diagnostics__failed_breakdown_reclaim__template_002__{date_tag}.json"
+    scan_diagnostics = {}
+    if diag_path.exists():
+        try:
+            with open(diag_path) as f:
+                scan_diagnostics = json.load(f)
+        except Exception:
+            pass
+
     summary = {
         "variant":            VARIANT_NAME,
         "signal_date":        signal_date,
@@ -245,7 +280,8 @@ def build_summary(signal_date: str, df: pd.DataFrame) -> dict:
             "cancel_by_et":   "13:30",
             "flatten_by_et":  "14:30",
         },
-        "run_timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "run_timestamp":    datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "scan_diagnostics": scan_diagnostics,
         "signals": [],
     }
 
@@ -288,6 +324,18 @@ def print_run_summary(signal_date: str, summary: dict, summary_path: Path) -> No
 
     if summary["signal_count"] == 0:
         print("  No qualifying signals for this date.", flush=True)
+        diag = summary.get("scan_diagnostics", {})
+        if diag:
+            print(f"  ---", flush=True)
+            print(f"  SCAN DIAGNOSTICS (why zero signals):", flush=True)
+            print(f"    universe_scanned:          {diag.get('universe_scanned', 'n/a'):>6}", flush=True)
+            print(f"    with_daily_data:           {diag.get('with_daily_data', 'n/a'):>6}", flush=True)
+            print(f"    skipped_price_gate:        {diag.get('skipped_price_gate', 'n/a'):>6}", flush=True)
+            print(f"    skipped_adv_gate:          {diag.get('skipped_adv_gate', 'n/a'):>6}", flush=True)
+            print(f"    failed_breakdown_filter:   {diag.get('failed_breakdown_filter', 'n/a'):>6}", flush=True)
+            print(f"    failed_reclaim_filter:     {diag.get('failed_reclaim_filter', 'n/a'):>6}", flush=True)
+            print(f"    failed_depth_filter:       {diag.get('failed_depth_filter', 'n/a'):>6}", flush=True)
+            print(f"    failed_reclaim_pct_filter: {diag.get('failed_reclaim_pct_filter', 'n/a'):>6}", flush=True)
     else:
         print("  SIGNALS (ordered by breakdown_depth_pct descending):", flush=True)
         for sig in summary["signals"]:
@@ -436,10 +484,26 @@ def main() -> None:
     run_stage("selection_layer", cmd_sel)
 
     # ------------------------------------------------------------------
-    # Stage 3: run summary
+    # Stage 3: journal write + ranked snapshot
     # ------------------------------------------------------------------
     print(
-        f"\n[Stage 3] Reads:  signal_pack__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
+        f"\n[Stage 3] Writes: journal_entries__fbr_t002__{date_tag}.csv\n"
+        f"          Writes: canonical_trade_journal_v1.csv (append, idempotent)\n"
+        f"          Writes: ranked_snapshot__fbr_t002__{date_tag}.csv",
+        flush=True,
+    )
+    cmd_journal = [
+        sys.executable, str(JOURNAL_WRITER_MODULE),
+        "--strategy-block", VARIANT_NAME,
+        "--signal-date", signal_date,
+    ]
+    run_stage("journal_write", cmd_journal)
+
+    # ------------------------------------------------------------------
+    # Stage 4: run summary
+    # ------------------------------------------------------------------
+    print(
+        f"\n[Stage 4] Reads:  signal_pack__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
         f"          Writes: run_summary__failed_breakdown_reclaim__template_002__{date_tag}.json",
         flush=True,
     )
@@ -453,15 +517,15 @@ def main() -> None:
     print(f"\n[OK]   summary completed successfully.", flush=True)
 
     # ------------------------------------------------------------------
-    # Stage 4: Telegram delivery
+    # Stage 5: Telegram delivery
     # ------------------------------------------------------------------
     if args.skip_telegram:
-        print("\n[info]  --skip-telegram set. Pipeline complete (Stages 0-3 only).", flush=True)
+        print("\n[info]  --skip-telegram set. Pipeline complete (Stages 0-4 only).", flush=True)
         return
 
     mode_note = "PREVIEW (print only)" if args.preview else "LIVE (Telegram send)"
     print(
-        f"\n[Stage 4] Reads:  selected_top_3__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
+        f"\n[Stage 5] Reads:  selected_top_3__failed_breakdown_reclaim__template_002__{date_tag}.csv\n"
         f"          Mode:   {mode_note}",
         flush=True,
     )
@@ -469,6 +533,33 @@ def main() -> None:
     if args.preview:
         cmd_tg.append("--preview")
     run_stage("telegram_delivery", cmd_tg)
+
+    # ------------------------------------------------------------------
+    # Stage 6: auto outcome resolution
+    # ------------------------------------------------------------------
+    print(
+        "\n[Stage 6] Resolves unresolved rows for completed trade sessions.\n"
+        "          Reads: canonical_trade_journal_v1.csv (unresolved rows)\n"
+        "          Fetches: intraday 1m bars per ticker via Massive API\n"
+        "          Writes: canonical_trade_journal_v1.csv (in-place update)",
+        flush=True,
+    )
+    cmd_resolver = [sys.executable, str(AUTO_RESOLVER_MODULE)]
+    if args.preview:
+        cmd_resolver.append("--dry-run")
+    run_stage("auto_outcome_resolution", cmd_resolver)
+
+    # ------------------------------------------------------------------
+    # Stage 7: sheet mirror regeneration
+    # ------------------------------------------------------------------
+    print(
+        "\n[Stage 7] Regenerates sheet mirror payload from updated canonical journal.\n"
+        "          Reads: canonical_trade_journal_v1.csv (all rows, post-resolution)\n"
+        "          Writes: sheet_mirror_payload__{YYYY_MM_DD}.json",
+        flush=True,
+    )
+    cmd_mirror = [sys.executable, str(SHEET_MIRROR_MODULE), "--all"]
+    run_stage("sheet_mirror_regeneration", cmd_mirror)
 
     print(f"\n[done]  Full nightly pipeline completed.\n", flush=True)
 
